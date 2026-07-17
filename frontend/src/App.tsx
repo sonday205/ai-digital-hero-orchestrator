@@ -1,9 +1,7 @@
 import {
   AlertCircle,
   ArrowUp,
-  Check,
   CircleStop,
-  LoaderCircle,
   Mic,
   ShieldCheck,
   Sparkles,
@@ -46,23 +44,6 @@ type ChatMessage = {
 
 type VoiceState = "idle" | "connecting" | "listening" | "transcribing";
 type ServiceState = "checking" | "ready" | "degraded" | "offline";
-
-const stageOrder: JobStage[] = [
-  "asking_llm",
-  "generating_voice",
-  "generating_video",
-  "downloading_video",
-];
-
-const stageShortLabels: Record<JobStage, string> = {
-  queued: "Tiếp nhận",
-  asking_llm: "Suy nghĩ",
-  generating_voice: "Tạo giọng",
-  generating_video: "Tạo video",
-  downloading_video: "Hoàn thiện",
-  completed: "Hoàn thành",
-  failed: "Có lỗi",
-};
 
 const sleep = (milliseconds: number) =>
   new Promise((resolve) => window.setTimeout(resolve, milliseconds));
@@ -382,7 +363,6 @@ function App() {
     setVideoUrl(null);
   }
 
-  const activeStageIndex = job ? stageOrder.indexOf(job.stage) : -1;
 
   return (
     <div className="app-shell">
@@ -412,8 +392,13 @@ function App() {
                 className="character-media"
                 src={videoUrl}
                 autoPlay
-                controls
+                controls={false}
                 playsInline
+                controlsList="nodownload noplaybackrate noremoteplayback"
+                disablePictureInPicture
+                disableRemotePlayback
+                tabIndex={-1}
+                onContextMenu={(event) => event.preventDefault()}
                 onEnded={resetVideo}
                 aria-label="Video Tô Vĩnh Diện trả lời"
               />
@@ -437,14 +422,6 @@ function App() {
             <div className="portrait-vignette" aria-hidden="true" />
             <div className="era-badge">ĐIỆN BIÊN PHỦ · 1954</div>
 
-            {isProcessing && (
-              <div className="processing-scrim" role="status" aria-live="polite">
-                <div className="processing-mark"><LoaderCircle aria-hidden="true" /></div>
-                <p className="processing-kicker">ĐANG DỰNG LẠI KÝ ỨC</p>
-                <p className="processing-title">{job?.stage_label}</p>
-                <p className="processing-note">Vui lòng chờ, câu trả lời sẽ xuất hiện cùng video.</p>
-              </div>
-            )}
           </div>
 
           <div className="character-caption">
@@ -457,7 +434,7 @@ function App() {
           </div>
 
           <blockquote>
-            “Sống bám cầu, bám đường; chết kiên cường, dũng cảm.”
+            “Thà hy sinh, quyết bảo vệ pháo”
           </blockquote>
         </section>
 
@@ -479,31 +456,22 @@ function App() {
             ))}
 
             {isProcessing && (
-              <article className="message-row assistant pending-message">
+              <article
+                className="message-row assistant pending-message"
+                role="status"
+                aria-label="Đang xử lý câu trả lời"
+              >
                 <p className="message-author">TÔ VĨNH DIỆN</p>
-                <div className="message-bubble">
-                  <LoaderCircle className="inline-loader" aria-hidden="true" />
-                  {job?.stage_label ?? "Đang tiếp nhận câu hỏi"}
+                <div className="message-bubble typing-bubble">
+                  <span className="typing-dots" aria-hidden="true">
+                    <span>.</span><span>.</span><span>.</span>
+                  </span>
                 </div>
               </article>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {job && isProcessing && (
-            <div className="pipeline-progress" aria-label="Tiến trình tạo câu trả lời">
-              {stageOrder.map((stage, index) => {
-                const active = stage === job.stage;
-                const done = activeStageIndex > index;
-                return (
-                  <div className={`pipeline-step ${active ? "active" : ""} ${done ? "done" : ""}`} key={stage}>
-                    <span>{done ? <Check aria-hidden="true" /> : index + 1}</span>
-                    <small>{stageShortLabels[stage]}</small>
-                  </div>
-                );
-              })}
-            </div>
-          )}
 
           {error && (
             <div className="error-banner" role="alert">
@@ -556,7 +524,6 @@ function App() {
       <footer>
         <span>TRẢI NGHIỆM LỊCH SỬ TƯƠNG TÁC</span>
         <span className="footer-rule" />
-        <span>LLM · OMNIVOICE · SOULX</span>
       </footer>
     </div>
   );
