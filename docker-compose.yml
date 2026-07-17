@@ -1,0 +1,39 @@
+name: digital-hero-orchestrator
+
+services:
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: digital-hero-orchestrator:latest
+    restart: unless-stopped
+    ports:
+      - "8996:8996"
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8996
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+      # Container gọi các API đã expose trên cùng host SSH.
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:8005}
+      LLM_WS_BASE_URL: ${LLM_WS_BASE_URL:-ws://host.docker.internal:8005}
+      TTS_BASE_URL: ${TTS_BASE_URL:-http://host.docker.internal:8989}
+      LIPSYNC_BASE_URL: ${LIPSYNC_BASE_URL:-http://host.docker.internal:8071}
+
+      CHARACTER_ID: to_vinh_dien
+      VOICE_ID: "001"
+      IMAGE_ID: "001"
+      CHARACTER_IMAGE_PATH: /app/character-image
+
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-45}
+      TTS_TIMEOUT_SECONDS: ${TTS_TIMEOUT_SECONDS:-900}
+      LIPSYNC_TIMEOUT_SECONDS: ${LIPSYNC_TIMEOUT_SECONDS:-3600}
+      VIDEO_DOWNLOAD_TIMEOUT_SECONDS: ${VIDEO_DOWNLOAD_TIMEOUT_SECONDS:-300}
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-2}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./storage:/app/storage
+      # Local mặc định dùng SVG. Trên SSH đặt CHARACTER_IMAGE_HOST_PATH
+      # thành đường dẫn tuyệt đối tới LipSync_CB/images/001.jpg.
+      - ${CHARACTER_IMAGE_HOST_PATH:-./assets/001.svg}:/app/character-image:ro

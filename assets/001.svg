@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100" role="img" aria-labelledby="title description">
+  <title id="title">Ảnh chờ nhân vật Tô Vĩnh Diện</title>
+  <desc id="description">Minh họa tông màu tươi sáng dùng tạm trước khi cấu hình ảnh 001.jpg trên máy chủ.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dff4ff"/>
+      <stop offset="0.55" stop-color="#a9ddf7"/>
+      <stop offset="1" stop-color="#ffe6a0"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="37%" r="44%">
+      <stop offset="0" stop-color="#fff8d7" stop-opacity=".92"/>
+      <stop offset="1" stop-color="#fff8d7" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" seed="8"/>
+      <feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 .035 0"/>
+    </filter>
+  </defs>
+  <rect width="900" height="1100" fill="url(#background)"/>
+  <rect width="900" height="1100" fill="url(#halo)"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity=".72">
+    <circle cx="450" cy="405" r="318"/>
+    <circle cx="450" cy="405" r="286"/>
+    <path d="M70 890h760M130 950h640"/>
+  </g>
+  <g fill="#244a68">
+    <ellipse cx="450" cy="394" rx="154" ry="190"/>
+    <path d="M170 1080c24-354 118-554 280-554s256 200 280 554z"/>
+    <path d="M276 337c17-137 84-214 177-214 94 0 159 77 174 214-48-47-109-70-177-70-66 0-124 23-174 70z"/>
+  </g>
+  <rect width="900" height="1100" filter="url(#grain)" opacity=".9"/>
+</svg>
