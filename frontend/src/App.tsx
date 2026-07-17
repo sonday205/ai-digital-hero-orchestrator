@@ -45,6 +45,7 @@ type ChatMessage = {
 };
 
 type VoiceState = "idle" | "connecting" | "listening" | "transcribing";
+type ServiceState = "checking" | "ready" | "degraded" | "offline";
 
 const stageOrder: JobStage[] = [
   "asking_llm",
@@ -66,10 +67,33 @@ const stageShortLabels: Record<JobStage, string> = {
 const sleep = (milliseconds: number) =>
   new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
+function createClientId() {
+  const cryptoApi = globalThis.crypto;
+  if (typeof cryptoApi?.randomUUID === "function") {
+    return cryptoApi.randomUUID();
+  }
+
+  if (typeof cryptoApi?.getRandomValues === "function") {
+    const bytes = cryptoApi.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (value) => value.toString(16).padStart(2, "0"));
+    return [
+      hex.slice(0, 4).join(""),
+      hex.slice(4, 6).join(""),
+      hex.slice(6, 8).join(""),
+      hex.slice(8, 10).join(""),
+      hex.slice(10, 16).join(""),
+    ].join("-");
+  }
+
+  return `fallback-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
 function getSessionId() {
   const saved = window.localStorage.getItem("digital-hero-session");
   if (saved) return saved;
-  const generated = `demo-${crypto.randomUUID?.() ?? Date.now().toString(36)}`;
+  const generated = `demo-${createClientId()}`;
   window.localStorage.setItem("digital-hero-session", generated);
   return generated;
 }
@@ -98,8 +122,9 @@ function App() {
   const [job, setJob] = useState<JobResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
-  const [serviceReady, setServiceReady] = useState<boolean | null>(null);
+  const [serviceState, setServiceState] = useState<ServiceState>("checking");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const sessionId = useMemo(getSessionId, []);
@@ -122,9 +147,26 @@ function App() {
   }, [messages, job?.stage]);
 
   useEffect(() => {
-    fetch("/health")
-      .then((response) => setServiceReady(response.ok))
-      .catch(() => setServiceReady(false));
+    let active = true;
+
+    async function checkServices() {
+      try {
+        const orchestrator = await fetch("/health", { cache: "no-store" });
+        if (!orchestrator.ok) throw new Error("orchestrator unavailable");
+        const upstreams = await fetch("/api/health/upstreams", { cache: "no-store" });
+        const health = (await upstreams.json()) as { status?: "ok" | "degraded" };
+        if (active) setServiceState(upstreams.ok && health.status === "ok" ? "ready" : "degraded");
+      } catch {
+        if (active) setServiceState("offline");
+      }
+    }
+
+    void checkServices();
+    const timer = window.setInterval(() => void checkServices(), 10_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -140,7 +182,7 @@ function App() {
     if (!message || isProcessing) return;
 
     const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: createClientId(),
       role: "user",
       text: message,
     };
@@ -353,12 +395,11 @@ function App() {
           </div>
         </div>
         <div className="service-status" aria-live="polite">
-          <span className={`status-dot ${serviceReady ? "online" : ""}`} />
-          {serviceReady === null
-            ? "Đang kết nối"
-            : serviceReady
-              ? "Hệ thống sẵn sàng"
-              : "Mất kết nối orchestrator"}
+          <span className={`status-dot ${serviceState}`} />
+          {serviceState === "checking" && "Đang kiểm tra dịch vụ"}
+          {serviceState === "ready" && "Hệ thống sẵn sàng"}
+          {serviceState === "degraded" && "Một dịch vụ chưa sẵn sàng"}
+          {serviceState === "offline" && "Mất kết nối orchestrator"}
         </div>
       </header>
 
@@ -377,11 +418,20 @@ function App() {
                 aria-label="Video Tô Vĩnh Diện trả lời"
               />
             ) : (
-              <img
-                className="character-media"
-                src="/api/v1/character/image"
-                alt="Nhân vật lịch sử Tô Vĩnh Diện"
-              />
+              imageError ? (
+                <div className="character-image-error" role="alert">
+                  <AlertCircle aria-hidden="true" />
+                  <span>Không tải được ảnh nhân vật. Hãy kiểm tra đường dẫn ảnh trên orchestrator.</span>
+                </div>
+              ) : (
+                <img
+                  className="character-media"
+                  src="/api/v1/character/image"
+                  alt="Nhân vật lịch sử Tô Vĩnh Diện"
+                  onLoad={() => setImageError(false)}
+                  onError={() => setImageError(true)}
+                />
+              )
             )}
 
             <div className="portrait-vignette" aria-hidden="true" />

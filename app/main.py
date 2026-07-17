@@ -123,7 +123,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/api/v1/character/image", tags=["character"])
     async def character_image() -> FileResponse:
-        path = resolved.character_image_path
+        path = resolved.character_image_path.expanduser()
         if not path.is_file():
             path = Path(__file__).resolve().parents[1] / "assets" / "001.svg"
         if not path.is_file():
@@ -131,7 +131,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return FileResponse(
             path,
             media_type=_detect_image_media_type(path),
-            headers={"Cache-Control": "public, max-age=300"},
+            # Ảnh có thể được thay bằng file khác trong lúc triển khai. Không cache
+            # để frontend phản ánh ngay CHARACTER_IMAGE_PATH mới.
+            headers={"Cache-Control": "no-store"},
         )
 
     @app.websocket("/api/v1/voice/{character_id}")

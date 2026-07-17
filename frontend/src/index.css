@@ -86,7 +86,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .brand-name { margin: 3px 0 0; color: var(--paper); font-family: Georgia, "Times New Roman", serif; font-size: 18px; }
 .service-status { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 4px rgba(243,111,99,.14); }
-.status-dot.online { background: #4cab70; box-shadow: 0 0 0 4px rgba(76,171,112,.16); }
+.status-dot.ready { background: #4cab70; box-shadow: 0 0 0 4px rgba(76,171,112,.16); }
+.status-dot.checking, .status-dot.degraded { background: var(--sun); box-shadow: 0 0 0 4px rgba(244,185,66,.18); }
 
 .main-grid {
   width: min(1480px, calc(100% - 40px));
@@ -119,6 +120,13 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 .character-media { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; object-position: center 22%; }
 video.character-media { background: #dff3fb; }
+.character-image-error {
+  position: absolute; inset: 0; display: grid; place-content: center; justify-items: center;
+  gap: 12px; padding: 32px; text-align: center; color: #9b352b;
+  background: linear-gradient(145deg, #def4ff, #fff2bd);
+}
+.character-image-error svg { width: 32px; height: 32px; }
+.character-image-error span { max-width: 360px; font-size: 13px; line-height: 1.5; }
 .portrait-vignette {
   position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(to bottom, rgba(23,50,77,0) 48%, rgba(23,50,77,.18) 100%);
