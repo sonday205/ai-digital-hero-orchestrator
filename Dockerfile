@@ -12,7 +12,7 @@ FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     APP_HOST=0.0.0.0 \
-    APP_PORT=8996 \
+    APP_PORT=8991 \
     STORAGE_DIR=/app/storage \
     FRONTEND_DIST_DIR=/app/frontend-dist \
     CHARACTER_IMAGE_PATH=/app/assets/001.svg
@@ -28,9 +28,9 @@ COPY --from=frontend-builder /frontend/dist ./frontend-dist/
 
 RUN mkdir -p /app/storage/jobs
 
-EXPOSE 8996
+EXPOSE 8991
 
 HEALTHCHECK --interval=20s --timeout=5s --start-period=10s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8996/health', timeout=3)" || exit 1
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8991/health', timeout=3)" || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8996"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8991"]

@@ -8,12 +8,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8996",
+        target: "http://127.0.0.1:8991",
         changeOrigin: true,
         ws: true,
       },
       "/health": {
-        target: "http://127.0.0.1:8996",
+        target: "http://127.0.0.1:8991",
         changeOrigin: true,
       },
     },

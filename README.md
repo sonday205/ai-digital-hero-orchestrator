@@ -10,7 +10,7 @@ Browser
 LLM :8005 → OmniVoice TTS :8989 → SoulX LipSync :8071
                                            │
                                            ▼
-                           Orchestrator + frontend :8996
+                           Orchestrator + frontend :8991
 ```
 
 Phiên bản demo cố định:
@@ -43,9 +43,9 @@ Voice không gọi LLM chat tự động. WebSocket voice chỉ stream transcrip
 | LLM voice | `8005` | `WS /v1/characters/to_vinh_dien/voice` |
 | TTS | `8989` | `POST /api/v1/tts/generate`, `GET /status/{task_id}` |
 | LipSync | `8071` | `POST /api/v1/lipsync/generate`, polling task, tải video |
-| Orchestrator | `8996` | Frontend và API public |
+| Orchestrator | `8991` | Frontend và API public |
 
-Frontend chỉ truy cập cổng `8996`.
+Frontend chỉ truy cập cổng `8991`.
 
 ## Chạy local để phát triển
 
@@ -57,7 +57,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 cp .env.example .env
-uvicorn app.main:app --host 0.0.0.0 --port 8996 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8991 --reload
 ```
 
 ### 2. Frontend dev server
@@ -70,7 +70,7 @@ npm install
 npm run dev
 ```
 
-Mở <http://127.0.0.1:5173>. Vite sẽ proxy REST và WebSocket sang FastAPI `8996`.
+Mở <http://127.0.0.1:5173>. Vite sẽ proxy REST và WebSocket sang FastAPI `8991`.
 
 ### 3. Chạy bản frontend đã build
 
@@ -78,19 +78,19 @@ Mở <http://127.0.0.1:5173>. Vite sẽ proxy REST và WebSocket sang FastAPI `8
 cd orchestrator/frontend
 npm run build
 cd ..
-uvicorn app.main:app --host 0.0.0.0 --port 8996
+uvicorn app.main:app --host 0.0.0.0 --port 8991
 ```
 
-Mở <http://127.0.0.1:8996>.
+Mở <http://127.0.0.1:8991>.
 
 Microphone của trình duyệt chỉ hoạt động trong secure context. Khi test qua SSH,
 chọn một trong hai cách:
 
-- Đặt HTTPS reverse proxy phía trước cổng `8996`; hoặc
-- Tạo SSH tunnel `ssh -L 8996:127.0.0.1:8996 user@server` rồi mở
-  <http://127.0.0.1:8996> trên máy cá nhân.
+- Đặt HTTPS reverse proxy phía trước cổng `8991`; hoặc
+- Tạo SSH tunnel `ssh -L 8991:127.0.0.1:8991 user@server` rồi mở
+  <http://127.0.0.1:8991> trên máy cá nhân.
 
-Không nên mở bằng `http://IP_SSH:8996` nếu cần microphone vì đa số trình duyệt
+Không nên mở bằng `http://IP_SSH:8991` nếu cần microphone vì đa số trình duyệt
 sẽ chặn `getUserMedia` trên HTTP không phải localhost.
 
 ## Chạy Docker trên SSH
@@ -110,13 +110,24 @@ Trong `.env`, thêm đường dẫn thật tới ảnh đang có trên SSH:
 CHARACTER_IMAGE_HOST_PATH=/duong-dan-tuyet-doi/AI_DIGITAL_HERO/LipSync_CB/images/001.jpg
 ```
 
+Nếu đã có `CHARACTER_IMAGE_PATH` là đường dẫn tuyệt đối thì Docker Compose cũng
+dùng trực tiếp giá trị đó; không bắt buộc khai báo thêm `CHARACTER_IMAGE_HOST_PATH`.
+
+Các biến `LLM_BASE_URL`, `TTS_BASE_URL` và `LIPSYNC_BASE_URL` dành cho lúc chạy
+orchestrator trực tiếp trên host. Docker Compose cố ý dùng nhóm `DOCKER_*_BASE_URL`
+để tránh đưa `127.0.0.1` vào container. Mặc định container kết nối các service
+trên host qua `host.docker.internal`.
+
+Nếu LipSync được publish bằng `API_PORT` khác `8071`, cấu hình cổng host thực tế
+cho orchestrator, ví dụ `DOCKER_LIPSYNC_BASE_URL=http://host.docker.internal:8990`.
+
 Build và chạy:
 
 ```bash
 docker compose up -d --build
 docker compose ps
-curl http://127.0.0.1:8996/health
-curl http://127.0.0.1:8996/api/health/upstreams
+curl http://127.0.0.1:8991/health
+curl http://127.0.0.1:8991/api/health/upstreams
 ```
 
 `host.docker.internal:host-gateway` được cấu hình để container orchestrator gọi các API đã expose trên host SSH. Không dùng `127.0.0.1` cho upstream bên trong container vì địa chỉ đó sẽ trỏ về chính container orchestrator.
@@ -126,7 +137,7 @@ curl http://127.0.0.1:8996/api/health/upstreams
 ### Tạo cuộc trò chuyện
 
 ```bash
-curl -X POST http://127.0.0.1:8996/api/v1/talk \
+curl -X POST http://127.0.0.1:8991/api/v1/talk \
   -H 'Content-Type: application/json' \
   -d '{
     "session_id": "demo-session-001",
@@ -147,7 +158,7 @@ Response `202`:
 ### Polling job
 
 ```bash
-curl http://127.0.0.1:8996/api/v1/jobs/JOB_ID
+curl http://127.0.0.1:8991/api/v1/jobs/JOB_ID
 ```
 
 Các stage:

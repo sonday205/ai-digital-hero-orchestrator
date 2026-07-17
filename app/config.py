@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     app_name: str = "digital-hero-orchestrator"
     app_host: str = "0.0.0.0"
-    app_port: int = 8996
+    app_port: int = 8991
     log_level: str = "INFO"
 
     llm_base_url: str = "http://127.0.0.1:8005"

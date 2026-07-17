@@ -8,17 +8,18 @@ services:
     image: digital-hero-orchestrator:latest
     restart: unless-stopped
     ports:
-      - "8996:8996"
+      - "8991:8991"
     environment:
       APP_HOST: 0.0.0.0
-      APP_PORT: 8996
+      APP_PORT: 8991
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
 
-      # Container gọi các API đã expose trên cùng host SSH.
-      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:8005}
-      LLM_WS_BASE_URL: ${LLM_WS_BASE_URL:-ws://host.docker.internal:8005}
-      TTS_BASE_URL: ${TTS_BASE_URL:-http://host.docker.internal:8989}
-      LIPSYNC_BASE_URL: ${LIPSYNC_BASE_URL:-http://host.docker.internal:8071}
+      # Không dùng các biến *_BASE_URL dành cho chế độ chạy trực tiếp: giá trị
+      # 127.0.0.1 của chúng sẽ trỏ nhầm về chính container orchestrator.
+      LLM_BASE_URL: ${DOCKER_LLM_BASE_URL:-http://host.docker.internal:8005}
+      LLM_WS_BASE_URL: ${DOCKER_LLM_WS_BASE_URL:-ws://host.docker.internal:8005}
+      TTS_BASE_URL: ${DOCKER_TTS_BASE_URL:-http://host.docker.internal:8989}
+      LIPSYNC_BASE_URL: ${DOCKER_LIPSYNC_BASE_URL:-http://host.docker.internal:8071}
 
       CHARACTER_ID: to_vinh_dien
       VOICE_ID: "001"
@@ -34,6 +35,6 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./storage:/app/storage
-      # Local mặc định dùng SVG. Trên SSH đặt CHARACTER_IMAGE_HOST_PATH
-      # thành đường dẫn tuyệt đối tới LipSync_CB/images/001.jpg.
-      - ${CHARACTER_IMAGE_HOST_PATH:-./assets/001.svg}:/app/character-image:ro
+      # Hỗ trợ cả biến host riêng và CHARACTER_IMAGE_PATH đang dùng khi chạy
+      # trực tiếp. Bên trong container ảnh luôn nằm tại /app/character-image.
+      - ${CHARACTER_IMAGE_HOST_PATH:-${CHARACTER_IMAGE_PATH:-./assets/001.svg}}:/app/character-image:ro
