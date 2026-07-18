@@ -388,7 +388,26 @@ blockquote {
 .conversation-panel { display: flex; flex-direction: column; overflow: hidden; }
 .conversation-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 25px 28px 20px; border-bottom: 1px solid var(--line); }
 .conversation-header h2 { margin: 7px 0 0; color: var(--paper); font: 600 24px/1.2 Georgia, serif; letter-spacing: -.02em; }
-.message-list { flex: 1; overflow-y: auto; min-height: 260px; padding: 25px 28px; scrollbar-width: thin; scrollbar-color: #a9d3e9 transparent; }
+.message-list {
+  /* Giữ header và ô nhập cố định, chỉ cuộn danh sách tin nhắn. */
+  flex: 1 1 0;
+  height: 0;
+  min-height: 0;
+  overflow-y: scroll;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 25px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: #8fc6e2 #edf8fd;
+}
+.message-list::-webkit-scrollbar { width: 9px; }
+.message-list::-webkit-scrollbar-track { background: #edf8fd; border-radius: 999px; }
+.message-list::-webkit-scrollbar-thumb {
+  border: 2px solid #edf8fd;
+  border-radius: 999px;
+  background: #8fc6e2;
+}
+.message-list::-webkit-scrollbar-thumb:hover { background: #5fa9cf; }
 .message-row { max-width: 87%; margin-bottom: 24px; }
 .message-row.user { margin-left: auto; }
 .message-author { margin: 0 0 7px; color: #60788c; font-size: 9px; font-weight: 800; letter-spacing: .17em; }
@@ -436,8 +455,6 @@ blockquote {
 .icon-button:focus-visible, .send-button:focus-visible, .error-banner button:focus-visible { outline: 3px solid rgba(63,145,219,.5); outline-offset: 3px; }
 .learning-note { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 1px 20px 18px; color: #6d8495; font-size: 9px; text-align: center; }
 
-footer { width: calc(100% - 36px); height: 42px; margin: 0 auto; display: flex; align-items: center; gap: 16px; color: #6e8799; font-size: 8px; font-weight: 700; letter-spacing: .18em; position: relative; z-index: 1; }
-.footer-rule { height: 1px; flex: 1; background: var(--line); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
 .session-delete-dialog {
@@ -527,7 +544,7 @@ footer { width: calc(100% - 36px); height: 42px; margin: 0 auto; display: flex; 
   .main-grid { grid-template-columns: 1fr; }
   .portrait-frame { min-height: min(680px, 72vh); }
   .character-panel, .conversation-panel { min-height: 680px; }
-  .message-list { max-height: 430px; }
+  .message-list { height: auto; min-height: 260px; max-height: 430px; }
 }
 
 @media (max-width: 640px) {
@@ -552,8 +569,6 @@ footer { width: calc(100% - 36px); height: 42px; margin: 0 auto; display: flex; 
   .composer { margin-inline: 12px; }
   .voice-hint { max-width: 180px; line-height: 1.3; }
   .error-banner { margin-inline: 12px; }
-  footer { width: calc(100% - 20px); height: 38px; }
-  footer span:first-child { display: none; }
   .session-delete-dialog { padding: 18px; }
   .dialog-actions { display: grid; grid-template-columns: 1fr; }
   .dialog-confirm { grid-row: 1; }

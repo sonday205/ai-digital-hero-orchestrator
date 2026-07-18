@@ -1091,11 +1091,6 @@ function App() {
         </main>
       </div>
 
-      <footer>
-        <span>TRẢI NGHIỆM LỊCH SỬ TƯƠNG TÁC</span>
-        <span className="footer-rule" />
-      </footer>
-
       <dialog
         ref={deleteDialogRef}
         className="session-delete-dialog"
