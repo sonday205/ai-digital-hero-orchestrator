@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     llm_base_url: str = "http://127.0.0.1:8005"
     llm_ws_base_url: str = "ws://127.0.0.1:8005"
     tts_base_url: str = "http://127.0.0.1:8989"
-    lipsync_base_url: str = "http://127.0.0.1:8071"
+    lipsync_base_url: str = "http://127.0.0.1:8990"
 
     character_id: str = "to_vinh_dien"
     voice_id: str = "001"

@@ -12,7 +12,7 @@ def make_settings(tmp_path: Path) -> Settings:
         llm_base_url="http://llm:8005",
         llm_ws_base_url="ws://llm:8005",
         tts_base_url="http://tts:8989",
-        lipsync_base_url="http://lipsync:8071",
+        lipsync_base_url="http://lipsync:8990",
         poll_interval_seconds=0.1,
         tts_timeout_seconds=1,
         lipsync_timeout_seconds=1,
@@ -59,7 +59,7 @@ async def test_signed_video_url_uses_configured_lipsync_host(tmp_path: Path) -> 
         lambda _: httpx.Response(
             200,
             json={
-                "download_url": "http://127.0.0.1:8071/api/v1/lipsync/jobs/job-1/video?expires=1&signature=abc"
+                "download_url": "http://127.0.0.1:8990/api/v1/lipsync/jobs/job-1/video?expires=1&signature=abc"
             },
         )
     )
@@ -67,4 +67,4 @@ async def test_signed_video_url_uses_configured_lipsync_host(tmp_path: Path) -> 
         clients = UpstreamClients(make_settings(tmp_path), http)
         url = await clients.create_video_download_url("job-1", "task-1")
 
-    assert url.startswith("http://lipsync:8071/api/v1/lipsync/jobs/job-1/video?")
+    assert url.startswith("http://lipsync:8990/api/v1/lipsync/jobs/job-1/video?")

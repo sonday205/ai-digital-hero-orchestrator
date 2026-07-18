@@ -19,7 +19,7 @@ services:
       LLM_BASE_URL: ${DOCKER_LLM_BASE_URL:-http://host.docker.internal:8005}
       LLM_WS_BASE_URL: ${DOCKER_LLM_WS_BASE_URL:-ws://host.docker.internal:8005}
       TTS_BASE_URL: ${DOCKER_TTS_BASE_URL:-http://host.docker.internal:8989}
-      LIPSYNC_BASE_URL: ${DOCKER_LIPSYNC_BASE_URL:-http://host.docker.internal:8071}
+      LIPSYNC_BASE_URL: ${DOCKER_LIPSYNC_BASE_URL:-http://host.docker.internal:8990}
 
       CHARACTER_ID: to_vinh_dien
       VOICE_ID: "001"

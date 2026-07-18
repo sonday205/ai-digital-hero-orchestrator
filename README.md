@@ -7,7 +7,7 @@ Browser
   ├── text ───────────────────────────────┐
   └── microphone → WebSocket proxy → LLM │
                                            ▼
-LLM :8005 → OmniVoice TTS :8989 → SoulX LipSync :8071
+LLM :8005 → OmniVoice TTS :8989 → SoulX LipSync :8990
                                            │
                                            ▼
                            Orchestrator + frontend :8991
@@ -42,7 +42,7 @@ Voice không gọi LLM chat tự động. WebSocket voice chỉ stream transcrip
 | LLM | `8005` | `POST /v1/characters/to_vinh_dien/chat` |
 | LLM voice | `8005` | `WS /v1/characters/to_vinh_dien/voice` |
 | TTS | `8989` | `POST /api/v1/tts/generate`, `GET /status/{task_id}` |
-| LipSync | `8071` | `POST /api/v1/lipsync/generate`, polling task, tải video |
+| LipSync | `8990` | `POST /api/v1/lipsync/generate`, polling task, tải video |
 | Orchestrator | `8991` | Frontend và API public |
 
 Frontend chỉ truy cập cổng `8991`.
@@ -95,7 +95,7 @@ sẽ chặn `getUserMedia` trên HTTP không phải localhost.
 
 ## Chạy Docker trên SSH
 
-Ba upstream phải expose đúng các cổng `8005`, `8989`, `8071` trên cùng host SSH.
+Ba upstream phải expose đúng các cổng `8005`, `8989`, `8990` trên cùng host SSH.
 
 Tạo `.env`:
 
@@ -118,7 +118,7 @@ orchestrator trực tiếp trên host. Docker Compose cố ý dùng nhóm `DOCKE
 để tránh đưa `127.0.0.1` vào container. Mặc định container kết nối các service
 trên host qua `host.docker.internal`.
 
-Nếu LipSync được publish bằng `API_PORT` khác `8071`, cấu hình cổng host thực tế
+Nếu LipSync được publish bằng `API_PORT` khác `8990`, cấu hình cổng host thực tế
 cho orchestrator, ví dụ `DOCKER_LIPSYNC_BASE_URL=http://host.docker.internal:8990`.
 
 Build và chạy:
