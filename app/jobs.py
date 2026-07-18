@@ -17,6 +17,7 @@ def utc_now() -> datetime:
 class OrchestrationJob:
     session_id: str
     message: str
+    character_id: str = "to_vinh_dien"
     job_id: str = field(default_factory=lambda: uuid4().hex)
     status: JobStatus = JobStatus.QUEUED
     stage: JobStage = JobStage.QUEUED
@@ -36,6 +37,7 @@ class OrchestrationJob:
         is_completed = self.status == JobStatus.COMPLETED
         return JobResponse(
             job_id=self.job_id,
+            character_id=self.character_id,
             status=self.status,
             stage=self.stage,
             stage_label=STAGE_LABELS[self.stage],
@@ -56,8 +58,17 @@ class JobStore:
         self._jobs: dict[str, OrchestrationJob] = {}
         self._lock = asyncio.Lock()
 
-    async def create(self, session_id: str, message: str) -> OrchestrationJob:
-        job = OrchestrationJob(session_id=session_id, message=message)
+    async def create(
+        self,
+        session_id: str,
+        message: str,
+        character_id: str = "to_vinh_dien",
+    ) -> OrchestrationJob:
+        job = OrchestrationJob(
+            session_id=session_id,
+            message=message,
+            character_id=character_id,
+        )
         async with self._lock:
             self._jobs[job.job_id] = job
         return job

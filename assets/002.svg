@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100" role="img" aria-labelledby="title description">
+  <title id="title">Ảnh chờ nhân vật Võ Thị Sáu</title>
+  <desc id="description">Minh họa dùng tạm trước khi cấu hình ảnh 002.jpg trên máy chủ.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff0c7"/>
+      <stop offset="0.52" stop-color="#f9bd9f"/>
+      <stop offset="1" stop-color="#b8e1ef"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="36%" r="43%">
+      <stop offset="0" stop-color="#fff9e7" stop-opacity=".94"/>
+      <stop offset="1" stop-color="#fff9e7" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="3" seed="12"/>
+      <feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 .035 0"/>
+    </filter>
+  </defs>
+  <rect width="900" height="1100" fill="url(#background)"/>
+  <rect width="900" height="1100" fill="url(#halo)"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity=".68">
+    <circle cx="450" cy="405" r="318"/>
+    <circle cx="450" cy="405" r="286"/>
+    <path d="M70 890h760M130 950h640"/>
+  </g>
+  <g fill="#5a3345">
+    <path d="M260 392c0-159 73-263 190-263s190 104 190 263c0 116-39 217-82 273H342c-43-56-82-157-82-273z"/>
+    <ellipse cx="450" cy="400" rx="139" ry="181" fill="#704057"/>
+    <path d="M162 1080c26-344 124-538 288-538s262 194 288 538z"/>
+    <path d="M297 326c23-129 81-199 157-199 80 0 139 71 158 207-49-42-103-63-162-63-57 0-108 18-153 55z" fill="#402838"/>
+  </g>
+  <rect width="900" height="1100" filter="url(#grain)" opacity=".9"/>
+</svg>

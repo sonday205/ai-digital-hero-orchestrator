@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 async def proxy_voice(websocket: WebSocket, character_id: str, settings: Settings) -> None:
     """Chuyển nguyên vẹn binary PCM và event transcript giữa browser và LLM."""
     await websocket.accept()
-    if character_id != settings.character_id:
+    try:
+        character = settings.get_character(character_id)
+    except ValueError:
         await websocket.send_json(
             {"type": "error", "code": "invalid_character", "message": "Nhân vật chưa được hỗ trợ."}
         )
@@ -25,7 +27,7 @@ async def proxy_voice(websocket: WebSocket, character_id: str, settings: Setting
         return
 
     upstream_url = (
-        f"{settings.llm_ws_base_url}/v1/characters/{settings.character_id}/voice"
+        f"{settings.llm_ws_base_url}/v1/characters/{character.id}/voice"
     )
     try:
         async with websockets.connect(

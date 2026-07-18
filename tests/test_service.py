@@ -9,16 +9,24 @@ from app.service import OrchestratorService
 
 
 class SuccessfulClients:
-    async def ask_llm(self, session_id: str, message: str):
+    def __init__(self) -> None:
+        self.character_id: str | None = None
+        self.voice_id: str | None = None
+        self.image_id: str | None = None
+
+    async def ask_llm(self, session_id: str, message: str, character_id: str | None = None):
+        self.character_id = character_id
         return "Chú sinh năm 1924 tại Thanh Hóa.", "request-1"
 
-    async def start_tts(self, text: str):
+    async def start_tts(self, text: str, voice_id: str | None = None):
+        self.voice_id = voice_id
         return "tts-task-1"
 
     async def wait_for_tts(self, task_id: str):
         return "/dev/shm/audio/tts-task-1.wav"
 
-    async def start_lipsync(self, audio_path: str):
+    async def start_lipsync(self, audio_path: str, image_id: str | None = None):
+        self.image_id = image_id
         return "lipsync-task-1", "a" * 32
 
     async def wait_for_lipsync(self, task_id: str):
@@ -36,7 +44,8 @@ class SuccessfulClients:
 async def test_full_pipeline_completes(tmp_path: Path) -> None:
     settings = Settings(storage_dir=tmp_path)
     jobs = JobStore()
-    service = OrchestratorService(settings, SuccessfulClients(), jobs)  # type: ignore[arg-type]
+    clients = SuccessfulClients()
+    service = OrchestratorService(settings, clients, jobs)  # type: ignore[arg-type]
 
     job = await service.submit("demo-session-001", "Chú sinh năm bao nhiêu?")
     for _ in range(100):
@@ -50,4 +59,32 @@ async def test_full_pipeline_completes(tmp_path: Path) -> None:
     assert current.status == JobStatus.COMPLETED
     assert current.answer == "Chú sinh năm 1924 tại Thanh Hóa."
     assert current.video_path is not None and current.video_path.is_file()
+    await service.close()
+
+
+@pytest.mark.asyncio
+async def test_vo_thi_sau_pipeline_uses_character_voice_and_image_002(tmp_path: Path) -> None:
+    settings = Settings(storage_dir=tmp_path)
+    jobs = JobStore()
+    clients = SuccessfulClients()
+    service = OrchestratorService(settings, clients, jobs)  # type: ignore[arg-type]
+
+    job = await service.submit(
+        "demo-session-002",
+        "Chị sinh năm bao nhiêu?",
+        "vo_thi_sau",
+    )
+    for _ in range(100):
+        current = await jobs.get(job.job_id)
+        if current and current.status in {JobStatus.COMPLETED, JobStatus.FAILED}:
+            break
+        await __import__("asyncio").sleep(0.01)
+
+    current = await jobs.get(job.job_id)
+    assert current is not None
+    assert current.status == JobStatus.COMPLETED
+    assert current.character_id == "vo_thi_sau"
+    assert clients.character_id == "vo_thi_sau"
+    assert clients.voice_id == "002"
+    assert clients.image_id == "002"
     await service.close()

@@ -21,10 +21,13 @@ services:
       TTS_BASE_URL: ${DOCKER_TTS_BASE_URL:-http://host.docker.internal:8989}
       LIPSYNC_BASE_URL: ${DOCKER_LIPSYNC_BASE_URL:-http://host.docker.internal:8990}
 
-      CHARACTER_ID: to_vinh_dien
-      VOICE_ID: "001"
-      IMAGE_ID: "001"
-      CHARACTER_IMAGE_PATH: /app/character-image
+      CHARACTER_ID: ${CHARACTER_ID:-to_vinh_dien}
+      VOICE_ID: ${VOICE_ID:-001}
+      IMAGE_ID: ${IMAGE_ID:-001}
+      VO_THI_SAU_VOICE_ID: ${VO_THI_SAU_VOICE_ID:-002}
+      VO_THI_SAU_IMAGE_ID: ${VO_THI_SAU_IMAGE_ID:-002}
+      CHARACTER_IMAGE_PATH: /app/character-images/001
+      VO_THI_SAU_IMAGE_PATH: /app/character-images/002
 
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-45}
       TTS_TIMEOUT_SECONDS: ${TTS_TIMEOUT_SECONDS:-900}
@@ -35,6 +38,6 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./storage:/app/storage
-      # Hỗ trợ cả biến host riêng và CHARACTER_IMAGE_PATH đang dùng khi chạy
-      # trực tiếp. Bên trong container ảnh luôn nằm tại /app/character-image.
-      - ${CHARACTER_IMAGE_HOST_PATH:-${CHARACTER_IMAGE_PATH:-./assets/001.svg}}:/app/character-image:ro
+      # Local dùng SVG chờ. Trên SSH, hai biến *_HOST_PATH trỏ tới 001.jpg/002.jpg.
+      - ${TO_VINH_DIEN_IMAGE_HOST_PATH:-${CHARACTER_IMAGE_HOST_PATH:-${CHARACTER_IMAGE_PATH:-./assets/001.svg}}}:/app/character-images/001:ro
+      - ${VO_THI_SAU_IMAGE_HOST_PATH:-./assets/002.svg}:/app/character-images/002:ro

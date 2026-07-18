@@ -5,7 +5,7 @@ import json
 import time
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin, urlsplit, urlunsplit
+from urllib.parse import quote, urljoin, urlsplit, urlunsplit
 
 import httpx
 
@@ -27,11 +27,17 @@ class UpstreamClients:
         self.settings = settings
         self.http = http
 
-    async def ask_llm(self, session_id: str, message: str) -> tuple[str, str | None]:
+    async def ask_llm(
+        self,
+        session_id: str,
+        message: str,
+        character_id: str | None = None,
+    ) -> tuple[str, str | None]:
+        resolved_character_id = character_id or self.settings.character_id
         data = await self._json_request(
             "llm",
             "POST",
-            f"{self.settings.llm_base_url}/v1/characters/{self.settings.character_id}/chat",
+            f"{self.settings.llm_base_url}/v1/characters/{resolved_character_id}/chat",
             timeout=self.settings.llm_timeout_seconds,
             json={"session_id": session_id, "message": message, "debug": False},
         )
@@ -40,7 +46,23 @@ class UpstreamClients:
             raise UpstreamServiceError("LLM", "LLM không trả về câu trả lời.")
         return answer, self._optional_text(data.get("request_id"))
 
-    async def start_tts(self, text: str) -> str:
+    async def delete_llm_session(self, character_id: str, session_id: str) -> bool:
+        """Xóa memory của một phiên tại LLM trước khi frontend quên phiên đó."""
+
+        encoded_character_id = quote(character_id, safe="")
+        encoded_session_id = quote(session_id, safe="")
+        data = await self._json_request(
+            "llm",
+            "DELETE",
+            (
+                f"{self.settings.llm_base_url}/v1/characters/"
+                f"{encoded_character_id}/sessions/{encoded_session_id}"
+            ),
+            timeout=self.settings.llm_timeout_seconds,
+        )
+        return bool(data.get("deleted"))
+
+    async def start_tts(self, text: str, voice_id: str | None = None) -> str:
         data = await self._json_request(
             "tts",
             "POST",
@@ -48,7 +70,7 @@ class UpstreamClients:
             timeout=30.0,
             json={
                 "text": text,
-                "voice_id": self.settings.voice_id,
+                "voice_id": voice_id or self.settings.voice_id,
                 "speed": 1.0,
                 "stream": False,
             },
@@ -80,13 +102,17 @@ class UpstreamClients:
             await asyncio.sleep(self.settings.poll_interval_seconds)
         raise UpstreamServiceError("TTS", "Quá thời gian chờ tạo giọng nói.")
 
-    async def start_lipsync(self, audio_path: str) -> tuple[str, str]:
+    async def start_lipsync(
+        self,
+        audio_path: str,
+        image_id: str | None = None,
+    ) -> tuple[str, str]:
         data = await self._json_request(
             "lipsync",
             "POST",
             f"{self.settings.lipsync_base_url}/api/v1/lipsync/generate",
             timeout=30.0,
-            json={"image_id": self.settings.image_id, "audio_path": audio_path},
+            json={"image_id": image_id or self.settings.image_id, "audio_path": audio_path},
         )
         task_id = self._optional_text(data.get("task_id"))
         job_id = self._optional_text(data.get("job_id"))

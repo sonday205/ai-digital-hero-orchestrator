@@ -14,9 +14,11 @@ from app.clients import UpstreamClients
 from app.config import Settings, get_settings
 from app.jobs import JobStore
 from app.schemas import (
+    CharacterSummary,
     HealthResponse,
     JobResponse,
     JobStatus,
+    SessionDeleteResponse,
     TalkAccepted,
     TalkRequest,
     UpstreamsHealthResponse,
@@ -54,8 +56,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="AI Digital Hero Orchestrator",
-        version="1.0.0",
-        description="Điều phối LLM, OmniVoice TTS và SoulX LipSync cho nhân vật Tô Vĩnh Diện.",
+        version="1.1.0",
+        description="Điều phối LLM, OmniVoice TTS và SoulX LipSync cho các nhân vật lịch sử.",
         lifespan=lifespan,
     )
     app.add_middleware(
@@ -82,6 +84,56 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             services=services,
         )
 
+    @app.get(
+        "/api/v1/characters",
+        response_model=list[CharacterSummary],
+        tags=["character"],
+    )
+    async def list_characters() -> list[CharacterSummary]:
+        return [
+            CharacterSummary(
+                id=character.id,
+                display_name=character.display_name,
+                self_pronoun=character.self_pronoun,
+                student_pronoun=character.student_pronoun,
+                short_description=character.short_description,
+                title=character.title,
+                life_years=character.life_years,
+                era_label=character.era_label,
+                quote=character.quote,
+                greeting=character.greeting,
+                voice_id=character.voice_id,
+                image_id=character.image_id,
+                image_url=f"/api/v1/characters/{character.id}/image",
+            )
+            for character in resolved.characters
+        ]
+
+    @app.delete(
+        "/api/v1/characters/{character_id}/sessions/{session_id}",
+        response_model=SessionDeleteResponse,
+        tags=["conversation"],
+    )
+    async def delete_session(
+        character_id: str,
+        session_id: str,
+        request: Request,
+    ) -> SessionDeleteResponse:
+        try:
+            resolved.get_character(character_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        deleted = await request.app.state.clients.delete_llm_session(
+            character_id,
+            session_id,
+        )
+        return SessionDeleteResponse(
+            character_id=character_id,
+            session_id=session_id,
+            deleted=deleted,
+        )
+
     @app.post(
         "/api/v1/talk",
         response_model=TalkAccepted,
@@ -89,11 +141,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         tags=["conversation"],
     )
     async def talk(payload: TalkRequest, request: Request) -> TalkAccepted:
-        job = await request.app.state.orchestrator.submit(
-            payload.session_id,
-            payload.message.strip(),
+        try:
+            job = await request.app.state.orchestrator.submit(
+                payload.session_id,
+                payload.message.strip(),
+                payload.character_id,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return TalkAccepted(
+            job_id=job.job_id,
+            character_id=job.character_id,
+            status_url=f"/api/v1/jobs/{job.job_id}",
         )
-        return TalkAccepted(job_id=job.job_id, status_url=f"/api/v1/jobs/{job.job_id}")
 
     @app.get(
         "/api/v1/jobs/{job_id}",
@@ -121,11 +181,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             headers={"Cache-Control": "private, no-store"},
         )
 
-    @app.get("/api/v1/character/image", tags=["character"])
-    async def character_image() -> FileResponse:
-        path = resolved.character_image_path.expanduser()
+    def character_image_response(character_id: str) -> FileResponse:
+        try:
+            character = resolved.get_character(character_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        path = character.image_path.expanduser()
         if not path.is_file():
-            path = Path(__file__).resolve().parents[1] / "assets" / "001.svg"
+            path = Path(__file__).resolve().parents[1] / "assets" / f"{character.image_id}.svg"
         if not path.is_file():
             raise HTTPException(status_code=404, detail="Chưa cấu hình ảnh nhân vật.")
         return FileResponse(
@@ -135,6 +199,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             # để frontend phản ánh ngay CHARACTER_IMAGE_PATH mới.
             headers={"Cache-Control": "no-store"},
         )
+
+    @app.get("/api/v1/characters/{character_id}/image", tags=["character"])
+    async def character_image(character_id: str) -> FileResponse:
+        return character_image_response(character_id)
+
+    @app.get("/api/v1/character/image", tags=["character"], deprecated=True)
+    async def legacy_character_image() -> FileResponse:
+        """Endpoint cũ vẫn phục vụ ảnh của nhân vật mặc định."""
+
+        return character_image_response(resolved.character_id)
 
     @app.websocket("/api/v1/voice/{character_id}")
     async def voice(websocket: WebSocket, character_id: str) -> None:

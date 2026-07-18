@@ -15,7 +15,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     APP_PORT=8991 \
     STORAGE_DIR=/app/storage \
     FRONTEND_DIST_DIR=/app/frontend-dist \
-    CHARACTER_IMAGE_PATH=/home/cbrain/ai_digital_hero/LipSync_CB/images/001.jpg
+    CHARACTER_IMAGE_PATH=/app/character-images/001 \
+    VO_THI_SAU_IMAGE_PATH=/app/character-images/002
 
 WORKDIR /app
 

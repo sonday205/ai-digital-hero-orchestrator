@@ -16,6 +16,7 @@ async def test_answer_is_hidden_until_video_is_complete(tmp_path: Path) -> None:
     processing = (await store.get(job.job_id)).to_response()  # type: ignore[union-attr]
 
     assert processing.status == JobStatus.PROCESSING
+    assert processing.character_id == "to_vinh_dien"
     assert processing.answer is None
     assert processing.video_url is None
 

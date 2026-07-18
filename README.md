@@ -13,25 +13,31 @@ LLM :8005 → OmniVoice TTS :8989 → SoulX LipSync :8990
                            Orchestrator + frontend :8991
 ```
 
-Phiên bản demo cố định:
+Phiên bản hiện tại hỗ trợ hai nhân vật:
 
-- Nhân vật: Tô Vĩnh Diện (`to_vinh_dien`).
-- Giọng đọc: `001`.
-- Ảnh LipSync: `001` (`images/001.jpg` trên SSH).
+| Nhân vật | `character_id` LLM | `voice_id` TTS | `image_id` LipSync |
+| --- | --- | --- | --- |
+| Tô Vĩnh Diện | `to_vinh_dien` | `001` | `001` |
+| Võ Thị Sáu | `vo_thi_sau` | `002` | `002` |
+
 - Frontend: React + Vite + Tailwind CSS.
 - Backend: FastAPI.
 - Không sửa hoặc import code từ ba service upstream.
+- Sidebar cho phép đổi nhân vật, tạo phiên mới và mở lại các phiên đã lưu trong
+  `localStorage` của trình duyệt.
 
 ## Luồng xử lý
 
-1. Frontend gửi câu hỏi tới `POST /api/v1/talk`.
+1. Frontend gửi `character_id`, `session_id` và câu hỏi tới `POST /api/v1/talk`.
 2. Orchestrator tạo job riêng và trả HTTP `202`.
-3. Job gọi LLM lấy câu trả lời nhưng chưa công bố ra frontend.
-4. Job gọi TTS, polling tới khi nhận `audio_path`.
-5. Job chuyển `image_id=001` và `audio_path` cho LipSync.
-6. Job polling LipSync, xin URL có chữ ký và tải MP4 về storage của orchestrator.
-7. Chỉ khi MP4 tải xong, API mới trả cả `answer` và `video_url`.
-8. Frontend thay ảnh tĩnh bằng video; video phát xong tự quay lại ảnh.
+3. Orchestrator resolve mapping nhân vật, ví dụ Võ Thị Sáu thành
+   `vo_thi_sau → voice 002 → image 002`.
+4. Job gọi LLM lấy câu trả lời nhưng chưa công bố ra frontend.
+5. Job gọi đúng giọng TTS và polling tới khi nhận `audio_path`.
+6. Job chuyển đúng `image_id` cùng `audio_path` cho LipSync.
+7. Job polling LipSync, xin URL có chữ ký và tải MP4 về storage của orchestrator.
+8. Chỉ khi MP4 tải xong, API mới trả cả `answer` và `video_url`.
+9. Frontend thay ảnh tĩnh bằng video; video phát xong tự quay lại ảnh.
 
 Voice không gọi LLM chat tự động. WebSocket voice chỉ stream transcript vào ô nhập theo từng `transcript.delta`. Khi nhận `transcript.final`, người dùng vẫn có thể sửa câu hỏi rồi bấm gửi.
 
@@ -39,8 +45,8 @@ Voice không gọi LLM chat tự động. WebSocket voice chỉ stream transcrip
 
 | Service | Cổng | Endpoint dùng bởi orchestrator |
 | --- | ---: | --- |
-| LLM | `8005` | `POST /v1/characters/to_vinh_dien/chat` |
-| LLM voice | `8005` | `WS /v1/characters/to_vinh_dien/voice` |
+| LLM | `8005` | `POST /v1/characters/{character_id}/chat` |
+| LLM voice | `8005` | `WS /v1/characters/{character_id}/voice` |
 | TTS | `8989` | `POST /api/v1/tts/generate`, `GET /status/{task_id}` |
 | LipSync | `8990` | `POST /api/v1/lipsync/generate`, polling task, tải video |
 | Orchestrator | `8991` | Frontend và API public |
@@ -104,14 +110,23 @@ cd orchestrator
 cp .env.example .env
 ```
 
-Trong `.env`, thêm đường dẫn thật tới ảnh đang có trên SSH:
+Trong `.env`, thêm đúng hai đường dẫn ảnh đang có trên SSH:
 
 ```dotenv
-CHARACTER_IMAGE_HOST_PATH=/duong-dan-tuyet-doi/AI_DIGITAL_HERO/LipSync_CB/images/001.jpg
+TO_VINH_DIEN_IMAGE_HOST_PATH=/home/cbrain/ai_digital_hero/LipSync_CB/images/001.jpg
+VO_THI_SAU_IMAGE_HOST_PATH=/home/cbrain/ai_digital_hero/LipSync_CB/images/002.jpg
 ```
 
-Nếu đã có `CHARACTER_IMAGE_PATH` là đường dẫn tuyệt đối thì Docker Compose cũng
-dùng trực tiếp giá trị đó; không bắt buộc khai báo thêm `CHARACTER_IMAGE_HOST_PATH`.
+Hai file này được mount read-only vào container orchestrator để frontend hiển thị
+ảnh tĩnh. LipSync vẫn tự resolve chính các mã `001`/`002` trong image storage của
+service LipSync; orchestrator không gửi đường dẫn filesystem của ảnh qua API.
+
+Khi chạy backend trực tiếp trên host thay vì Docker, dùng:
+
+```dotenv
+CHARACTER_IMAGE_PATH=/home/cbrain/ai_digital_hero/LipSync_CB/images/001.jpg
+VO_THI_SAU_IMAGE_PATH=/home/cbrain/ai_digital_hero/LipSync_CB/images/002.jpg
+```
 
 Các biến `LLM_BASE_URL`, `TTS_BASE_URL` và `LIPSYNC_BASE_URL` dành cho lúc chạy
 orchestrator trực tiếp trên host. Docker Compose cố ý dùng nhóm `DOCKER_*_BASE_URL`
@@ -134,14 +149,24 @@ curl http://127.0.0.1:8991/api/health/upstreams
 
 ## API của orchestrator
 
+### Danh sách nhân vật
+
+```bash
+curl http://127.0.0.1:8991/api/v1/characters
+```
+
+Response chứa metadata hiển thị, `voice_id`, `image_id` và `image_url`. Frontend
+lấy danh sách này từ orchestrator thay vì tự suy luận mapping giữa các service.
+
 ### Tạo cuộc trò chuyện
 
 ```bash
 curl -X POST http://127.0.0.1:8991/api/v1/talk \
   -H 'Content-Type: application/json' \
   -d '{
-    "session_id": "demo-session-001",
-    "message": "Chú sinh năm bao nhiêu?"
+    "session_id": "demo-session-vo-thi-sau-001",
+    "character_id": "vo_thi_sau",
+    "message": "Chị sinh năm bao nhiêu?"
   }'
 ```
 
@@ -150,6 +175,7 @@ Response `202`:
 ```json
 {
   "job_id": "...",
+  "character_id": "vo_thi_sau",
   "status": "queued",
   "status_url": "/api/v1/jobs/..."
 }
@@ -184,4 +210,7 @@ docker compose config
 - Job store đang nằm trong RAM, phù hợp một instance demo. Restart orchestrator sẽ mất metadata của job đang chạy.
 - Video đã tải được lưu tại `storage/jobs/` và chưa có lịch cleanup tự động.
 - Mỗi lần chỉ nên gửi một câu hỏi từ frontend; giao diện khóa composer trong lúc pipeline đang chạy.
+- Danh sách session và tin nhắn hiển thị được lưu trong `localStorage` của từng
+  trình duyệt. Memory phía LLM vẫn theo cơ chế riêng của LLM và có thể mất khi
+  service LLM restart.
 - Ba service upstream vẫn chịu trách nhiệm cho model, Redis/Celery và thư mục dùng chung `/dev/shm/audio` giữa TTS với LipSync.

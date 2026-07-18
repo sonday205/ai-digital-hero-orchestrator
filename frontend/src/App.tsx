@@ -2,10 +2,17 @@ import {
   AlertCircle,
   ArrowUp,
   CircleStop,
+  Clock3,
+  MessageSquareText,
   Mic,
+  PanelLeftClose,
+  PanelLeftOpen,
   ShieldCheck,
   Sparkles,
+  SquarePen,
+  Trash2,
   Volume2,
+  X,
 } from "lucide-react";
 import {
   FormEvent,
@@ -27,6 +34,7 @@ type JobStage =
 
 type JobResponse = {
   job_id: string;
+  character_id: string;
   status: "queued" | "processing" | "completed" | "failed";
   stage: JobStage;
   stage_label: string;
@@ -36,14 +44,85 @@ type JobResponse = {
   error: string | null;
 };
 
+type CharacterProfile = {
+  id: string;
+  display_name: string;
+  self_pronoun: string;
+  student_pronoun: string;
+  short_description: string;
+  title: string;
+  life_years: string;
+  era_label: string;
+  quote: string;
+  greeting: string;
+  voice_id: string;
+  image_id: string;
+  image_url: string;
+};
+
 type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   text: string;
 };
 
+type ChatSession = {
+  id: string;
+  character_id: string;
+  title: string;
+  messages: ChatMessage[];
+  created_at: string;
+  updated_at: string;
+};
+
+type StoredConversationState = {
+  active_session_id: string;
+  sessions: ChatSession[];
+};
+
 type VoiceState = "idle" | "connecting" | "listening" | "transcribing";
 type ServiceState = "checking" | "ready" | "degraded" | "offline";
+
+const SESSION_STORAGE_KEY = "digital-hero-conversations-v1";
+const LEGACY_SESSION_KEY = "digital-hero-session";
+const SIDEBAR_STORAGE_KEY = "digital-hero-sidebar";
+const SIDEBAR_DRAWER_QUERY = "(max-width: 1100px)";
+const NEW_SESSION_TITLE = "Cuộc trò chuyện mới";
+
+const FALLBACK_CHARACTERS: CharacterProfile[] = [
+  {
+    id: "to_vinh_dien",
+    display_name: "Tô Vĩnh Diện",
+    self_pronoun: "chú",
+    student_pronoun: "cháu",
+    short_description: "Anh hùng pháo binh trong Chiến dịch Điện Biên Phủ.",
+    title: "ANH HÙNG LIỆT SĨ",
+    life_years: "1924 — 1954",
+    era_label: "ĐIỆN BIÊN PHỦ · 1954",
+    quote: "Thà hy sinh, quyết bảo vệ pháo",
+    greeting:
+      "Chào cháu. Chú là Tô Vĩnh Diện. Cháu muốn cùng chú tìm hiểu điều gì về lịch sử?",
+    voice_id: "001",
+    image_id: "001",
+    image_url: "/api/v1/characters/to_vinh_dien/image",
+  },
+  {
+    id: "vo_thi_sau",
+    display_name: "Võ Thị Sáu",
+    self_pronoun: "chị",
+    student_pronoun: "em",
+    short_description: "Người con gái Đất Đỏ kiên cường trong kháng chiến chống Pháp.",
+    title: "NỮ ANH HÙNG LIỆT SĨ",
+    life_years: "1933 — 1952",
+    era_label: "ĐẤT ĐỎ · CÔN ĐẢO",
+    quote: "Tinh thần kiên định, không khuất phục",
+    greeting:
+      "Chào em. Chị là Võ Thị Sáu. Em muốn cùng chị tìm hiểu điều gì về lịch sử?",
+    voice_id: "002",
+    image_id: "002",
+    image_url: "/api/v1/characters/vo_thi_sau/image",
+  },
+];
 
 const sleep = (milliseconds: number) =>
   new Promise((resolve) => window.setTimeout(resolve, milliseconds));
@@ -71,12 +150,78 @@ function createClientId() {
   return `fallback-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
-function getSessionId() {
-  const saved = window.localStorage.getItem("digital-hero-session");
-  if (saved) return saved;
-  const generated = `demo-${createClientId()}`;
-  window.localStorage.setItem("digital-hero-session", generated);
-  return generated;
+function createSession(character: CharacterProfile, preferredId?: string): ChatSession {
+  const now = new Date().toISOString();
+  return {
+    id: preferredId || `session-${createClientId()}`,
+    character_id: character.id,
+    title: NEW_SESSION_TITLE,
+    messages: [
+      {
+        id: `welcome-${createClientId()}`,
+        role: "assistant",
+        text: character.greeting,
+      },
+    ],
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+function loadConversationState(): StoredConversationState {
+  try {
+    const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<StoredConversationState>;
+      const sessions = Array.isArray(parsed.sessions)
+        ? parsed.sessions.filter(isStoredSession)
+        : [];
+      const activeSessionExists = sessions.some(
+        (session) => session.id === parsed.active_session_id,
+      );
+      if (sessions.length > 0) {
+        return {
+          sessions,
+          active_session_id: activeSessionExists
+            ? parsed.active_session_id!
+            : sessions[0].id,
+        };
+      }
+    }
+  } catch {
+    // Dữ liệu localStorage hỏng không được làm giao diện mất khả năng khởi động.
+  }
+
+  const legacySessionId = window.localStorage.getItem(LEGACY_SESSION_KEY) || undefined;
+  const firstSession = createSession(FALLBACK_CHARACTERS[0], legacySessionId);
+  return { sessions: [firstSession], active_session_id: firstSession.id };
+}
+
+function isStoredSession(value: unknown): value is ChatSession {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<ChatSession>;
+  return (
+    typeof candidate.id === "string" &&
+    candidate.id.length >= 8 &&
+    typeof candidate.character_id === "string" &&
+    typeof candidate.title === "string" &&
+    Array.isArray(candidate.messages) &&
+    candidate.messages.every(
+      (message) =>
+        Boolean(message) &&
+        typeof message.id === "string" &&
+        (message.role === "user" || message.role === "assistant") &&
+        typeof message.text === "string",
+    ) &&
+    typeof candidate.created_at === "string" &&
+    typeof candidate.updated_at === "string"
+  );
+}
+
+function getInitialSidebarOpen() {
+  const isDrawerViewport = window.matchMedia(SIDEBAR_DRAWER_QUERY).matches;
+  if (isDrawerViewport) return false;
+  return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) !== "closed";
 }
 
 function floatToPcm16(input: Float32Array, inputRate: number) {
@@ -92,13 +237,14 @@ function floatToPcm16(input: Float32Array, inputRate: number) {
 }
 
 function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      text: "Chào cháu. Chú là Tô Vĩnh Diện. Cháu muốn cùng chú tìm hiểu điều gì về lịch sử?",
-    },
-  ]);
+  const initialConversationState = useMemo(loadConversationState, []);
+  const [characters, setCharacters] = useState<CharacterProfile[]>(FALLBACK_CHARACTERS);
+  const [sessions, setSessions] = useState<ChatSession[]>(
+    initialConversationState.sessions,
+  );
+  const [activeSessionId, setActiveSessionId] = useState(
+    initialConversationState.active_session_id,
+  );
   const [draft, setDraft] = useState("");
   const [job, setJob] = useState<JobResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -107,13 +253,30 @@ function App() {
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [serviceState, setServiceState] = useState<ServiceState>("checking");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(getInitialSidebarOpen);
+  const [isDrawerViewport, setIsDrawerViewport] = useState(
+    () => window.matchMedia(SIDEBAR_DRAWER_QUERY).matches,
+  );
+  const [sessionPendingDelete, setSessionPendingDelete] =
+    useState<ChatSession | null>(null);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
 
-  const sessionId = useMemo(getSessionId, []);
+  const activeSession =
+    sessions.find((session) => session.id === activeSessionId) || sessions[0];
+  const activeCharacter =
+    characters.find((character) => character.id === activeSession?.character_id) ||
+    FALLBACK_CHARACTERS[0];
+  const messages = activeSession?.messages || [];
+  const characterSessions = sessions
+    .filter((session) => session.character_id === activeCharacter.id)
+    .sort((left, right) => right.updated_at.localeCompare(left.updated_at));
   const isProcessing =
     isSubmitting || job?.status === "queued" || job?.status === "processing";
+  const navigationLocked = isProcessing || voiceState !== "idle";
   const canSend = draft.trim().length > 0 && !isProcessing && voiceState === "idle";
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const deleteDialogRef = useRef<HTMLDialogElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -128,6 +291,89 @@ function App() {
   }, [messages, job?.stage]);
 
   useEffect(() => {
+    window.localStorage.setItem(
+      SESSION_STORAGE_KEY,
+      JSON.stringify({ active_session_id: activeSessionId, sessions }),
+    );
+    window.localStorage.setItem(LEGACY_SESSION_KEY, activeSessionId);
+  }, [activeSessionId, sessions]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(SIDEBAR_DRAWER_QUERY);
+    const handleViewportChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      setIsDrawerViewport(event.matches);
+      if (event.matches) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(
+          window.localStorage.getItem(SIDEBAR_STORAGE_KEY) !== "closed",
+        );
+      }
+    };
+
+    handleViewportChange(mediaQuery);
+    mediaQuery.addEventListener("change", handleViewportChange);
+    return () => mediaQuery.removeEventListener("change", handleViewportChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isDrawerViewport) {
+      window.localStorage.setItem(
+        SIDEBAR_STORAGE_KEY,
+        isSidebarOpen ? "open" : "closed",
+      );
+    }
+  }, [isDrawerViewport, isSidebarOpen]);
+
+  useEffect(() => {
+    const dialog = deleteDialogRef.current;
+    if (!dialog) return;
+    if (sessionPendingDelete && !dialog.open) dialog.showModal();
+    if (!sessionPendingDelete && dialog.open) dialog.close();
+  }, [sessionPendingDelete]);
+
+  useEffect(() => {
+    function closeDrawerWithEscape(event: globalThis.KeyboardEvent) {
+      if (
+        event.key === "Escape" &&
+        isDrawerViewport &&
+        isSidebarOpen &&
+        !deleteDialogRef.current?.open
+      ) {
+        setIsSidebarOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", closeDrawerWithEscape);
+    return () => window.removeEventListener("keydown", closeDrawerWithEscape);
+  }, [isDrawerViewport, isSidebarOpen]);
+
+  useEffect(() => {
+    document.title = `Gặp gỡ lịch sử — ${activeCharacter.display_name}`;
+  }, [activeCharacter.display_name]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCharacters() {
+      try {
+        const response = await fetch("/api/v1/characters", { cache: "no-store" });
+        const payload = (await response.json()) as CharacterProfile[];
+        if (active && response.ok && Array.isArray(payload) && payload.length > 0) {
+          setCharacters(payload);
+        }
+      } catch {
+        // Fallback local giữ UI sử dụng được khi backend đang khởi động.
+      }
+    }
+
+    void loadCharacters();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     let active = true;
 
     async function checkServices() {
@@ -136,7 +382,11 @@ function App() {
         if (!orchestrator.ok) throw new Error("orchestrator unavailable");
         const upstreams = await fetch("/api/health/upstreams", { cache: "no-store" });
         const health = (await upstreams.json()) as { status?: "ok" | "degraded" };
-        if (active) setServiceState(upstreams.ok && health.status === "ok" ? "ready" : "degraded");
+        if (active) {
+          setServiceState(
+            upstreams.ok && health.status === "ok" ? "ready" : "degraded",
+          );
+        }
       } catch {
         if (active) setServiceState("offline");
       }
@@ -160,14 +410,15 @@ function App() {
   async function submitMessage(event?: FormEvent) {
     event?.preventDefault();
     const message = draft.trim();
-    if (!message || isProcessing) return;
+    if (!message || isProcessing || !activeSession) return;
 
-    const userMessage: ChatMessage = {
+    const requestSessionId = activeSession.id;
+    const requestCharacterId = activeCharacter.id;
+    appendMessage(requestSessionId, {
       id: createClientId(),
       role: "user",
       text: message,
-    };
-    setMessages((current) => [...current, userMessage]);
+    });
     setDraft("");
     setError(null);
     setVideoUrl(null);
@@ -177,12 +428,17 @@ function App() {
       const response = await fetch("/api/v1/talk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, message }),
+        body: JSON.stringify({
+          session_id: requestSessionId,
+          character_id: requestCharacterId,
+          message,
+        }),
       });
       const accepted = await response.json();
       if (!response.ok) throw new Error(accepted.detail || `HTTP ${response.status}`);
       setJob({
         job_id: accepted.job_id,
+        character_id: accepted.character_id || requestCharacterId,
         status: "queued",
         stage: "queued",
         stage_label: "Đang xếp yêu cầu vào hàng đợi",
@@ -199,7 +455,10 @@ function App() {
         const statusResponse = await fetch(accepted.status_url, { cache: "no-store" });
         current = await statusResponse.json();
         if (!statusResponse.ok) {
-          throw new Error((current as unknown as { detail?: string }).detail || "Không đọc được trạng thái.");
+          throw new Error(
+            (current as unknown as { detail?: string }).detail ||
+              "Không đọc được trạng thái.",
+          );
         }
         setJob(current);
       } while (current.status === "queued" || current.status === "processing");
@@ -211,10 +470,11 @@ function App() {
         throw new Error("Kết quả hoàn thành nhưng thiếu câu trả lời hoặc video.");
       }
 
-      setMessages((existing) => [
-        ...existing,
-        { id: `${current.job_id}-answer`, role: "assistant", text: current.answer! },
-      ]);
+      appendMessage(requestSessionId, {
+        id: `${current.job_id}-answer`,
+        role: "assistant",
+        text: current.answer,
+      });
       setVideoUrl(`${current.video_url}?v=${Date.now()}`);
     } catch (caught) {
       const messageText = caught instanceof Error ? caught.message : "Đã xảy ra lỗi.";
@@ -222,10 +482,133 @@ function App() {
       setError(messageText);
       setJob((current) =>
         current
-          ? { ...current, status: "failed", stage: "failed", stage_label: "Không thể hoàn thành", error: messageText }
+          ? {
+              ...current,
+              status: "failed",
+              stage: "failed",
+              stage_label: "Không thể hoàn thành",
+              error: messageText,
+            }
           : current,
       );
     }
+  }
+
+  function appendMessage(sessionId: string, message: ChatMessage) {
+    setSessions((current) =>
+      current.map((session) => {
+        if (session.id !== sessionId) return session;
+        const title =
+          message.role === "user" && session.title === NEW_SESSION_TITLE
+            ? createSessionTitle(message.text)
+            : session.title;
+        return {
+          ...session,
+          title,
+          messages: [...session.messages, message],
+          updated_at: new Date().toISOString(),
+        };
+      }),
+    );
+  }
+
+  function selectCharacter(characterId: string) {
+    if (navigationLocked || characterId === activeCharacter.id) return;
+    const existing = sessions
+      .filter((session) => session.character_id === characterId)
+      .sort((left, right) => right.updated_at.localeCompare(left.updated_at))[0];
+    if (existing) {
+      setActiveSessionId(existing.id);
+    } else {
+      const character =
+        characters.find((item) => item.id === characterId) || FALLBACK_CHARACTERS[0];
+      const created = createSession(character);
+      setSessions((current) => [created, ...current]);
+      setActiveSessionId(created.id);
+    }
+    resetConversationView();
+    closeSidebarOnDrawer();
+  }
+
+  function selectSession(sessionId: string) {
+    if (navigationLocked || sessionId === activeSessionId) return;
+    setActiveSessionId(sessionId);
+    resetConversationView();
+    closeSidebarOnDrawer();
+  }
+
+  function startNewSession() {
+    if (navigationLocked) return;
+    const created = createSession(activeCharacter);
+    setSessions((current) => [created, ...current]);
+    setActiveSessionId(created.id);
+    resetConversationView();
+    closeSidebarOnDrawer();
+  }
+
+  function closeSidebarOnDrawer() {
+    if (isDrawerViewport) setIsSidebarOpen(false);
+  }
+
+  function requestSessionDelete(session: ChatSession) {
+    if (navigationLocked || deletingSessionId) return;
+    setSessionPendingDelete(session);
+  }
+
+  async function confirmSessionDelete() {
+    const session = sessionPendingDelete;
+    if (!session || navigationLocked || deletingSessionId) return;
+    setDeletingSessionId(session.id);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `/api/v1/characters/${encodeURIComponent(session.character_id)}/sessions/${encodeURIComponent(session.id)}`,
+        { method: "DELETE" },
+      );
+      const payload = (await response.json().catch(() => ({}))) as { detail?: string };
+      if (!response.ok) {
+        throw new Error(payload.detail || "Không thể xóa cuộc trò chuyện.");
+      }
+
+      const remainingSessions = sessions.filter((item) => item.id !== session.id);
+      if (session.id === activeSessionId) {
+        const nextSession = remainingSessions
+          .filter((item) => item.character_id === session.character_id)
+          .sort((left, right) => right.updated_at.localeCompare(left.updated_at))[0];
+
+        if (nextSession) {
+          setActiveSessionId(nextSession.id);
+          setSessions(remainingSessions);
+        } else {
+          const character =
+            characters.find((item) => item.id === session.character_id) ||
+            FALLBACK_CHARACTERS[0];
+          const replacement = createSession(character);
+          setSessions([replacement, ...remainingSessions]);
+          setActiveSessionId(replacement.id);
+        }
+        resetConversationView();
+      } else {
+        setSessions(remainingSessions);
+      }
+      setSessionPendingDelete(null);
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Không thể xóa cuộc trò chuyện.",
+      );
+      setSessionPendingDelete(null);
+    } finally {
+      setDeletingSessionId(null);
+    }
+  }
+
+  function resetConversationView() {
+    resetVideo();
+    setDraft("");
+    setJob(null);
+    setError(null);
+    setImageError(false);
   }
 
   function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -246,6 +629,10 @@ function App() {
   }
 
   async function startVoice() {
+    if (!activeSession) {
+      setError("Không tìm thấy phiên trò chuyện đang hoạt động.");
+      return;
+    }
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       setError("Microphone cần HTTPS, localhost hoặc 127.0.0.1 để hoạt động.");
       return;
@@ -262,14 +649,18 @@ function App() {
 
       const scheme = location.protocol === "https:" ? "wss" : "ws";
       const socket = new WebSocket(
-        `${scheme}://${location.host}/api/v1/voice/to_vinh_dien`,
+        `${scheme}://${location.host}/api/v1/voice/${activeCharacter.id}`,
       );
       socket.binaryType = "arraybuffer";
       socketRef.current = socket;
 
       socket.onopen = () => {
         socket.send(
-          JSON.stringify({ type: "session.start", session_id: sessionId, debug: false }),
+          JSON.stringify({
+            type: "session.start",
+            session_id: activeSession.id,
+            debug: false,
+          }),
         );
         startAudioCapture(stream, socket);
         setVoiceState("listening");
@@ -323,7 +714,9 @@ function App() {
     const processor = audioContext.createScriptProcessor(4_096, 1, 1);
     processor.onaudioprocess = (event) => {
       if (socket.readyState === WebSocket.OPEN) {
-        socket.send(floatToPcm16(event.inputBuffer.getChannelData(0), audioContext.sampleRate));
+        socket.send(
+          floatToPcm16(event.inputBuffer.getChannelData(0), audioContext.sampleRate),
+        );
       }
     };
     source.connect(processor);
@@ -363,15 +756,30 @@ function App() {
     setVideoUrl(null);
   }
 
-
   return (
     <div className="app-shell">
       <header className="site-header">
-        <div className="brand-lockup">
-          <div className="brand-seal" aria-hidden="true">VN</div>
-          <div>
-            <p className="brand-eyebrow">AI DIGITAL HERO</p>
-            <p className="brand-name">Gặp gỡ lịch sử</p>
+        <div className="header-left">
+          <button
+            className="sidebar-toggle"
+            type="button"
+            onClick={() => setIsSidebarOpen((current) => !current)}
+            aria-label={isSidebarOpen ? "Đóng thanh bên" : "Mở thanh bên"}
+            aria-expanded={isSidebarOpen}
+            aria-controls="conversation-sidebar"
+          >
+            {isSidebarOpen ? (
+              <PanelLeftClose aria-hidden="true" />
+            ) : (
+              <PanelLeftOpen aria-hidden="true" />
+            )}
+          </button>
+          <div className="brand-lockup">
+            <div className="brand-seal" aria-hidden="true">VN</div>
+            <div>
+              <p className="brand-eyebrow">AI DIGITAL HERO</p>
+              <p className="brand-name">Gặp gỡ lịch sử</p>
+            </div>
           </div>
         </div>
         <div className="service-status" aria-live="polite">
@@ -383,150 +791,379 @@ function App() {
         </div>
       </header>
 
-      <main className="main-grid">
-        <section className="character-panel" aria-labelledby="character-title">
-          <div className="portrait-frame">
-            {videoUrl ? (
-              <video
-                ref={videoRef}
-                className="character-media"
-                src={videoUrl}
-                autoPlay
-                controls={false}
-                playsInline
-                controlsList="nodownload noplaybackrate noremoteplayback"
-                disablePictureInPicture
-                disableRemotePlayback
-                tabIndex={-1}
-                onContextMenu={(event) => event.preventDefault()}
-                onEnded={resetVideo}
-                aria-label="Video Tô Vĩnh Diện trả lời"
-              />
-            ) : (
-              imageError ? (
+      {isDrawerViewport && isSidebarOpen && (
+        <button
+          className="sidebar-backdrop"
+          type="button"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-label="Đóng thanh bên"
+        />
+      )}
+
+      <div
+        className={`workspace-layout ${isSidebarOpen ? "sidebar-open" : "sidebar-closed"}`}
+      >
+        <aside
+          id="conversation-sidebar"
+          className={`history-sidebar ${isSidebarOpen ? "is-open" : "is-closed"}`}
+          aria-label="Nhân vật và phiên trò chuyện"
+          aria-hidden={!isSidebarOpen}
+        >
+          <div className="sidebar-topbar">
+            <div className="sidebar-brand">
+              <div className="sidebar-brand-mark" aria-hidden="true">VN</div>
+              <div>
+                <strong>Gặp gỡ lịch sử</strong>
+                <small>Trò chuyện cùng nhân vật</small>
+              </div>
+            </div>
+            <button
+              className="sidebar-close-button"
+              type="button"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="Đóng thanh bên"
+            >
+              <PanelLeftClose aria-hidden="true" />
+            </button>
+          </div>
+
+          <button
+            className="sidebar-new-chat"
+            type="button"
+            onClick={startNewSession}
+            disabled={navigationLocked}
+          >
+            <SquarePen aria-hidden="true" />
+            <span>Cuộc trò chuyện mới</span>
+          </button>
+
+          <p className="sidebar-section-label">NHÂN VẬT</p>
+          <div className="character-selector" role="list" aria-label="Danh sách nhân vật">
+            {characters.map((character) => {
+              const isActive = character.id === activeCharacter.id;
+              return (
+                <button
+                  key={character.id}
+                  className={`character-option ${isActive ? "active" : ""}`}
+                  type="button"
+                  onClick={() => selectCharacter(character.id)}
+                  disabled={navigationLocked}
+                  aria-pressed={isActive}
+                >
+                  <img src={character.image_url} alt="" aria-hidden="true" />
+                  <span>
+                    <strong>{character.display_name}</strong>
+                    <small>Giọng {character.voice_id}</small>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="session-heading">
+            <div>
+              <p className="sidebar-section-label">GẦN ĐÂY</p>
+              <p>{characterSessions.length} phiên với {activeCharacter.display_name}</p>
+            </div>
+          </div>
+
+          <nav className="session-list" aria-label="Các phiên trò chuyện đã lưu">
+            {characterSessions.map((session) => {
+              const isActive = session.id === activeSessionId;
+              return (
+                <div
+                  key={session.id}
+                  className={`session-row ${isActive ? "active" : ""}`}
+                >
+                  <button
+                    className="session-option"
+                    type="button"
+                    onClick={() => selectSession(session.id)}
+                    disabled={navigationLocked}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <MessageSquareText aria-hidden="true" />
+                    <span>
+                      <strong>{session.title}</strong>
+                      <small>
+                        <Clock3 aria-hidden="true" /> {formatSessionTime(session.updated_at)}
+                      </small>
+                    </span>
+                  </button>
+                  <button
+                    className="session-delete-button"
+                    type="button"
+                    onClick={() => requestSessionDelete(session)}
+                    disabled={navigationLocked || deletingSessionId === session.id}
+                    aria-label={`Xóa cuộc trò chuyện ${session.title}`}
+                  >
+                    <Trash2 aria-hidden="true" />
+                  </button>
+                </div>
+              );
+            })}
+          </nav>
+
+          <p className="sidebar-note">
+            Lịch sử phiên được lưu trên trình duyệt này.
+          </p>
+        </aside>
+
+        <main className="main-grid">
+          <section className="character-panel" aria-labelledby="character-title">
+            <div className="portrait-frame">
+              {videoUrl ? (
+                <video
+                  ref={videoRef}
+                  className="character-media"
+                  src={videoUrl}
+                  autoPlay
+                  controls={false}
+                  playsInline
+                  controlsList="nodownload noplaybackrate noremoteplayback"
+                  disablePictureInPicture
+                  disableRemotePlayback
+                  tabIndex={-1}
+                  onContextMenu={(event) => event.preventDefault()}
+                  onEnded={resetVideo}
+                  aria-label={`Video ${activeCharacter.display_name} trả lời`}
+                />
+              ) : imageError ? (
                 <div className="character-image-error" role="alert">
                   <AlertCircle aria-hidden="true" />
-                  <span>Không tải được ảnh nhân vật. Hãy kiểm tra đường dẫn ảnh trên orchestrator.</span>
+                  <span>
+                    Không tải được ảnh nhân vật. Hãy kiểm tra đường dẫn ảnh trên orchestrator.
+                  </span>
                 </div>
               ) : (
                 <img
+                  key={activeCharacter.id}
                   className="character-media"
-                  src="/api/v1/character/image"
-                  alt="Nhân vật lịch sử Tô Vĩnh Diện"
+                  src={activeCharacter.image_url}
+                  alt={`Nhân vật lịch sử ${activeCharacter.display_name}`}
                   onLoad={() => setImageError(false)}
                   onError={() => setImageError(true)}
                 />
-              )
-            )}
+              )}
 
-            <div className="portrait-vignette" aria-hidden="true" />
-            <div className="era-badge">ĐIỆN BIÊN PHỦ · 1954</div>
-
-          </div>
-
-          <div className="character-caption">
-            <div>
-              <p className="caption-label">ANH HÙNG LIỆT SĨ</p>
-              <h1 id="character-title">Tô Vĩnh Diện</h1>
-              <p className="life-years">1924 — 1954</p>
+              <div className="portrait-vignette" aria-hidden="true" />
+              <div className="era-badge">{activeCharacter.era_label}</div>
             </div>
-            <div className="voice-chip"><Volume2 aria-hidden="true" /> Giọng 001</div>
-          </div>
 
-          <blockquote>
-            “Thà hy sinh, quyết bảo vệ pháo”
-          </blockquote>
-        </section>
-
-        <section id="conversation" className="conversation-panel" aria-labelledby="conversation-title">
-          <div className="conversation-header">
-            <div>
-              <p className="section-kicker">CUỘC TRÒ CHUYỆN</p>
-              <h2 id="conversation-title">Hỏi chuyện người anh hùng</h2>
-            </div>
-            <div className="verified-chip"><ShieldCheck aria-hidden="true" /> Dữ liệu lịch sử</div>
-          </div>
-
-          <div className="message-list" aria-live="polite">
-            {messages.map((message) => (
-              <article key={message.id} className={`message-row ${message.role}`}>
-                <p className="message-author">{message.role === "assistant" ? "TÔ VĨNH DIỆN" : "BẠN"}</p>
-                <div className="message-bubble">{message.text}</div>
-              </article>
-            ))}
-
-            {isProcessing && (
-              <article
-                className="message-row assistant pending-message"
-                role="status"
-                aria-label="Đang xử lý câu trả lời"
-              >
-                <p className="message-author">TÔ VĨNH DIỆN</p>
-                <div className="message-bubble typing-bubble">
-                  <span className="typing-dots" aria-hidden="true">
-                    <span>.</span><span>.</span><span>.</span>
-                  </span>
-                </div>
-              </article>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-
-          {error && (
-            <div className="error-banner" role="alert">
-              <AlertCircle aria-hidden="true" />
-              <span>{error}</span>
-              <button type="button" onClick={() => setError(null)} aria-label="Đóng thông báo lỗi">×</button>
-            </div>
-          )}
-
-          <form className="composer" onSubmit={submitMessage}>
-            <label className="sr-only" htmlFor="message-input">Nhập câu hỏi cho Tô Vĩnh Diện</label>
-            <textarea
-              id="message-input"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={handleComposerKeyDown}
-              placeholder={voiceState === "listening" ? "Đang nghe, hãy nói câu hỏi…" : "Hỏi điều bạn muốn biết…"}
-              maxLength={2000}
-              rows={1}
-              disabled={Boolean(isProcessing)}
-            />
-            <div className="composer-actions">
-              <div className="voice-hint" aria-live="polite">
-                {voiceState === "connecting" && "Đang mở micro…"}
-                {voiceState === "listening" && "Đang nghe · chữ sẽ hiện ở ô nhập"}
-                {voiceState === "transcribing" && "Đang hoàn thiện transcript…"}
-                {voiceState === "idle" && "Enter để gửi · Shift + Enter xuống dòng"}
+            <div className="character-caption">
+              <div>
+                <p className="caption-label">{activeCharacter.title}</p>
+                <h1 id="character-title">{activeCharacter.display_name}</h1>
+                <p className="life-years">{activeCharacter.life_years}</p>
               </div>
-              <div className="action-buttons">
-                <button
-                  className={`icon-button mic-button ${voiceState === "listening" ? "recording" : ""}`}
-                  type="button"
-                  onClick={() => void toggleVoice()}
-                  disabled={Boolean(isProcessing) || voiceState === "connecting" || voiceState === "transcribing"}
-                  aria-label={voiceState === "listening" ? "Dừng thu âm" : "Nhập câu hỏi bằng giọng nói"}
+              <div className="voice-chip">
+                <Volume2 aria-hidden="true" /> Giọng {activeCharacter.voice_id}
+              </div>
+            </div>
+
+            <blockquote>{activeCharacter.quote}</blockquote>
+          </section>
+
+          <section
+            id="conversation"
+            className="conversation-panel"
+            aria-labelledby="conversation-title"
+          >
+            <div className="conversation-header">
+              <div>
+                <p className="section-kicker">CUỘC TRÒ CHUYỆN</p>
+                <h2 id="conversation-title">Hỏi chuyện {activeCharacter.display_name}</h2>
+              </div>
+              <div className="verified-chip">
+                <ShieldCheck aria-hidden="true" /> Dữ liệu lịch sử
+              </div>
+            </div>
+
+            <div className="message-list" aria-live="polite">
+              {messages.map((message) => (
+                <article key={message.id} className={`message-row ${message.role}`}>
+                  <p className="message-author">
+                    {message.role === "assistant"
+                      ? activeCharacter.display_name.toLocaleUpperCase("vi-VN")
+                      : "BẠN"}
+                  </p>
+                  <div className="message-bubble">{message.text}</div>
+                </article>
+              ))}
+
+              {isProcessing && (
+                <article
+                  className="message-row assistant pending-message"
+                  role="status"
+                  aria-label="Đang xử lý câu trả lời"
                 >
-                  {voiceState === "listening" ? <CircleStop aria-hidden="true" /> : <Mic aria-hidden="true" />}
-                </button>
-                <button className="send-button" type="submit" disabled={!canSend} aria-label="Gửi câu hỏi">
-                  <ArrowUp aria-hidden="true" />
-                </button>
-              </div>
+                  <p className="message-author">
+                    {activeCharacter.display_name.toLocaleUpperCase("vi-VN")}
+                  </p>
+                  <div className="message-bubble typing-bubble">
+                    <span className="typing-dots" aria-hidden="true">
+                      <span>.</span><span>.</span><span>.</span>
+                    </span>
+                  </div>
+                </article>
+              )}
+              <div ref={messagesEndRef} />
             </div>
-          </form>
 
-          <p className="learning-note"><Sparkles aria-hidden="true" /> Nội dung phục vụ học tập và được đối chiếu với kho tư liệu lịch sử.</p>
-        </section>
-      </main>
+            {error && (
+              <div className="error-banner" role="alert">
+                <AlertCircle aria-hidden="true" />
+                <span>{error}</span>
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  aria-label="Đóng thông báo lỗi"
+                >×</button>
+              </div>
+            )}
+
+            <form className="composer" onSubmit={submitMessage}>
+              <label className="sr-only" htmlFor="message-input">
+                Nhập câu hỏi cho {activeCharacter.display_name}
+              </label>
+              <textarea
+                id="message-input"
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={handleComposerKeyDown}
+                placeholder={
+                  voiceState === "listening"
+                    ? "Đang nghe, hãy nói câu hỏi…"
+                    : `Hỏi ${activeCharacter.self_pronoun} điều bạn muốn biết…`
+                }
+                maxLength={2000}
+                rows={1}
+                disabled={Boolean(isProcessing)}
+              />
+              <div className="composer-actions">
+                <div className="voice-hint" aria-live="polite">
+                  {voiceState === "connecting" && "Đang mở micro…"}
+                  {voiceState === "listening" && "Đang nghe · chữ sẽ hiện ở ô nhập"}
+                  {voiceState === "transcribing" && "Đang hoàn thiện transcript…"}
+                  {voiceState === "idle" && "Enter để gửi · Shift + Enter xuống dòng"}
+                </div>
+                <div className="action-buttons">
+                  <button
+                    className={`icon-button mic-button ${
+                      voiceState === "listening" ? "recording" : ""
+                    }`}
+                    type="button"
+                    onClick={() => void toggleVoice()}
+                    disabled={
+                      Boolean(isProcessing) ||
+                      voiceState === "connecting" ||
+                      voiceState === "transcribing"
+                    }
+                    aria-label={
+                      voiceState === "listening"
+                        ? "Dừng thu âm"
+                        : "Nhập câu hỏi bằng giọng nói"
+                    }
+                  >
+                    {voiceState === "listening" ? (
+                      <CircleStop aria-hidden="true" />
+                    ) : (
+                      <Mic aria-hidden="true" />
+                    )}
+                  </button>
+                  <button
+                    className="send-button"
+                    type="submit"
+                    disabled={!canSend}
+                    aria-label="Gửi câu hỏi"
+                  >
+                    <ArrowUp aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <p className="learning-note">
+              <Sparkles aria-hidden="true" /> Nội dung phục vụ học tập và được đối chiếu
+              với kho tư liệu lịch sử.
+            </p>
+          </section>
+        </main>
+      </div>
 
       <footer>
         <span>TRẢI NGHIỆM LỊCH SỬ TƯƠNG TÁC</span>
         <span className="footer-rule" />
       </footer>
+
+      <dialog
+        ref={deleteDialogRef}
+        className="session-delete-dialog"
+        aria-labelledby="delete-dialog-title"
+        onCancel={(event) => {
+          event.preventDefault();
+          if (!deletingSessionId) setSessionPendingDelete(null);
+        }}
+        onClose={() => {
+          if (!deletingSessionId) setSessionPendingDelete(null);
+        }}
+      >
+        <div className="dialog-heading">
+          <div className="dialog-icon" aria-hidden="true">
+            <Trash2 />
+          </div>
+          <button
+            type="button"
+            className="dialog-close"
+            onClick={() => setSessionPendingDelete(null)}
+            disabled={Boolean(deletingSessionId)}
+            aria-label="Đóng hộp thoại"
+          >
+            <X aria-hidden="true" />
+          </button>
+        </div>
+        <h2 id="delete-dialog-title">Xóa cuộc trò chuyện?</h2>
+        <p>
+          Cuộc trò chuyện “{sessionPendingDelete?.title}” sẽ bị xóa khỏi trình duyệt
+          và bộ nhớ hội thoại của nhân vật. Thao tác này không thể hoàn tác.
+        </p>
+        <div className="dialog-actions">
+          <button
+            type="button"
+            className="dialog-cancel"
+            onClick={() => setSessionPendingDelete(null)}
+            disabled={Boolean(deletingSessionId)}
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            className="dialog-confirm"
+            onClick={() => void confirmSessionDelete()}
+            disabled={Boolean(deletingSessionId)}
+          >
+            {deletingSessionId ? "Đang xóa…" : "Xóa cuộc trò chuyện"}
+          </button>
+        </div>
+      </dialog>
     </div>
   );
+}
+
+function createSessionTitle(message: string) {
+  const normalized = message.replace(/\s+/g, " ").trim();
+  return normalized.length > 34 ? `${normalized.slice(0, 34)}…` : normalized;
+}
+
+function formatSessionTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Vừa tạo";
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function joinVoiceText(base: string, transcript: string) {

@@ -20,8 +20,16 @@ class OrchestratorService:
         self.jobs = jobs
         self._tasks: set[asyncio.Task[None]] = set()
 
-    async def submit(self, session_id: str, message: str) -> OrchestrationJob:
-        job = await self.jobs.create(session_id, message)
+    async def submit(
+        self,
+        session_id: str,
+        message: str,
+        character_id: str | None = None,
+    ) -> OrchestrationJob:
+        resolved_character_id = character_id or self.settings.character_id
+        # Validate trước khi tạo background task để API có thể báo lỗi ngay.
+        self.settings.get_character(resolved_character_id)
+        job = await self.jobs.create(session_id, message, resolved_character_id)
         task = asyncio.create_task(self._run(job.job_id), name=f"orchestration-{job.job_id}")
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
@@ -38,17 +46,25 @@ class OrchestratorService:
         if job is None:
             return
         try:
+            character = self.settings.get_character(job.character_id)
             await self.jobs.update_stage(job_id, JobStage.ASKING_LLM)
-            answer, request_id = await self.clients.ask_llm(job.session_id, job.message)
+            answer, request_id = await self.clients.ask_llm(
+                job.session_id,
+                job.message,
+                character.id,
+            )
             await self.jobs.save_answer(job_id, answer, request_id)
 
             await self.jobs.update_stage(job_id, JobStage.GENERATING_VOICE)
-            tts_task_id = await self.clients.start_tts(answer)
+            tts_task_id = await self.clients.start_tts(answer, character.voice_id)
             await self.jobs.save_tts_task(job_id, tts_task_id)
             audio_path = await self.clients.wait_for_tts(tts_task_id)
 
             await self.jobs.update_stage(job_id, JobStage.GENERATING_VIDEO)
-            lipsync_task_id, lipsync_job_id = await self.clients.start_lipsync(audio_path)
+            lipsync_task_id, lipsync_job_id = await self.clients.start_lipsync(
+                audio_path,
+                character.image_id,
+            )
             await self.jobs.save_lipsync_task(job_id, lipsync_task_id, lipsync_job_id)
             await self.clients.wait_for_lipsync(lipsync_task_id)
 

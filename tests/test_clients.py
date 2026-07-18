@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 import httpx
 import pytest
@@ -18,6 +19,44 @@ def make_settings(tmp_path: Path) -> Settings:
         lipsync_timeout_seconds=1,
         storage_dir=tmp_path,
     )
+
+
+@pytest.mark.asyncio
+async def test_character_mapping_is_forwarded_to_all_upstreams(tmp_path: Path) -> None:
+    captured: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content) if request.content else {}
+        if request.url.path.endswith("/v1/characters/vo_thi_sau/chat"):
+            captured["llm_path"] = request.url.path
+            return httpx.Response(200, json={"answer": "Chị chào em.", "request_id": "llm-1"})
+        if request.url.path.endswith("/api/v1/tts/generate"):
+            captured["voice_id"] = payload.get("voice_id")
+            return httpx.Response(200, json={"task_id": "tts-1", "status": "processing"})
+        if request.url.path.endswith("/api/v1/lipsync/generate"):
+            captured["image_id"] = payload.get("image_id")
+            return httpx.Response(200, json={"task_id": "lip-1", "job_id": "job-1"})
+        if request.method == "DELETE" and request.url.path.endswith(
+            "/v1/characters/vo_thi_sau/sessions/demo-session-002"
+        ):
+            captured["delete_path"] = request.url.path
+            return httpx.Response(200, json={"session_id": "demo-session-002", "deleted": True})
+        return httpx.Response(404)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+        clients = UpstreamClients(make_settings(tmp_path), http)
+        await clients.ask_llm("demo-session-002", "Xin chào", "vo_thi_sau")
+        await clients.start_tts("Chị chào em.", "002")
+        await clients.start_lipsync("/dev/shm/audio/tts-1.wav", "002")
+        deleted = await clients.delete_llm_session("vo_thi_sau", "demo-session-002")
+
+    assert deleted is True
+    assert captured == {
+        "llm_path": "/v1/characters/vo_thi_sau/chat",
+        "voice_id": "002",
+        "image_id": "002",
+        "delete_path": "/v1/characters/vo_thi_sau/sessions/demo-session-002",
+    }
 
 
 @pytest.mark.asyncio
