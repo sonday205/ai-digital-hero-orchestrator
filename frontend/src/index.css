@@ -197,7 +197,17 @@ button { -webkit-tap-highlight-color: transparent; }
   font-weight: 800;
   letter-spacing: .15em;
 }
-.character-selector { display: grid; gap: 4px; }
+.character-selector {
+  min-height: 0;
+  max-height: min(40dvh, 430px);
+  padding-right: 2px;
+  display: grid;
+  gap: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #a9d3e9 transparent;
+}
 .character-option, .session-option, .session-delete-button {
   width: 100%;
   border: 1px solid transparent;

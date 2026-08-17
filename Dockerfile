@@ -16,7 +16,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     STORAGE_DIR=/app/storage \
     FRONTEND_DIST_DIR=/app/frontend-dist \
     CHARACTER_IMAGE_PATH=/app/character-images/001 \
-    VO_THI_SAU_IMAGE_PATH=/app/character-images/002
+    VO_THI_SAU_IMAGE_PATH=/app/character-images/002 \
+    KIM_DONG_IMAGE_PATH=/app/character-images/003 \
+    LE_VAN_TAM_IMAGE_PATH=/app/character-images/004 \
+    NGUYEN_VAN_TROI_IMAGE_PATH=/app/character-images/005 \
+    LE_HONG_PHONG_IMAGE_PATH=/app/character-images/006 \
+    NGUYEN_BINH_KHIEM_IMAGE_PATH=/app/character-images/007 \
+    NGUYEN_BA_NGOC_IMAGE_PATH=/app/character-images/008 \
+    LE_CHAN_IMAGE_PATH=/app/character-images/009 \
+    LE_NGOC_HAN_IMAGE_PATH=/app/character-images/010 \
+    DINH_NUP_IMAGE_PATH=/app/character-images/011 \
+    NGO_QUYEN_IMAGE_PATH=/app/character-images/012 \
+    QUANG_TRUNG_NGUYEN_HUE_IMAGE_PATH=/app/character-images/013 \
+    LE_LOI_IMAGE_PATH=/app/character-images/014
 
 WORKDIR /app
 

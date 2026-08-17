@@ -191,6 +191,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if not path.is_file():
             path = Path(__file__).resolve().parents[1] / "assets" / f"{character.image_id}.svg"
         if not path.is_file():
+            path = Path(__file__).resolve().parents[1] / "assets" / "placeholder.svg"
+        if not path.is_file():
             raise HTTPException(status_code=404, detail="Chưa cấu hình ảnh nhân vật.")
         return FileResponse(
             path,

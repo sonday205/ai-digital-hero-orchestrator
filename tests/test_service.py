@@ -63,16 +63,16 @@ async def test_full_pipeline_completes(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_vo_thi_sau_pipeline_uses_character_voice_and_image_002(tmp_path: Path) -> None:
+async def test_le_loi_pipeline_uses_character_voice_and_image_014(tmp_path: Path) -> None:
     settings = Settings(storage_dir=tmp_path)
     jobs = JobStore()
     clients = SuccessfulClients()
     service = OrchestratorService(settings, clients, jobs)  # type: ignore[arg-type]
 
     job = await service.submit(
-        "demo-session-002",
-        "Chị sinh năm bao nhiêu?",
-        "vo_thi_sau",
+        "demo-session-014",
+        "Khởi nghĩa Lam Sơn diễn ra như thế nào?",
+        "le_loi",
     )
     for _ in range(100):
         current = await jobs.get(job.job_id)
@@ -83,8 +83,8 @@ async def test_vo_thi_sau_pipeline_uses_character_voice_and_image_002(tmp_path: 
     current = await jobs.get(job.job_id)
     assert current is not None
     assert current.status == JobStatus.COMPLETED
-    assert current.character_id == "vo_thi_sau"
-    assert clients.character_id == "vo_thi_sau"
-    assert clients.voice_id == "002"
-    assert clients.image_id == "002"
+    assert current.character_id == "le_loi"
+    assert clients.character_id == "le_loi"
+    assert clients.voice_id == "014"
+    assert clients.image_id == "014"
     await service.close()

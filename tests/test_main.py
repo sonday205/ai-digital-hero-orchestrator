@@ -60,7 +60,7 @@ def test_character_image_uses_configured_absolute_path(tmp_path: Path) -> None:
     assert response.content == image.read_bytes()
 
 
-def test_character_api_lists_both_profiles_and_serves_vo_thi_sau_image(tmp_path: Path) -> None:
+def test_character_api_lists_all_profiles_and_serves_vo_thi_sau_image(tmp_path: Path) -> None:
     to_vinh_dien_image = tmp_path / "001.jpg"
     vo_thi_sau_image = tmp_path / "002.jpg"
     to_vinh_dien_image.write_bytes(b"\xff\xd8\xffto-vinh-dien")
@@ -80,11 +80,44 @@ def test_character_api_lists_both_profiles_and_serves_vo_thi_sau_image(tmp_path:
 
     assert characters.status_code == 200
     profiles = {item["id"]: item for item in characters.json()}
-    assert set(profiles) == {"to_vinh_dien", "vo_thi_sau"}
+    assert set(profiles) == {
+        "to_vinh_dien",
+        "vo_thi_sau",
+        "kim_dong",
+        "le_van_tam",
+        "nguyen_van_troi",
+        "le_hong_phong",
+        "nguyen_binh_khiem",
+        "nguyen_ba_ngoc",
+        "le_chan",
+        "le_ngoc_han",
+        "dinh_nup",
+        "ngo_quyen",
+        "quang_trung_nguyen_hue",
+        "le_loi",
+    }
+    assert len(characters.json()) == 14
     assert profiles["vo_thi_sau"]["voice_id"] == "002"
     assert profiles["vo_thi_sau"]["image_id"] == "002"
     assert image.status_code == 200
     assert image.content == vo_thi_sau_image.read_bytes()
+
+
+def test_character_without_configured_portrait_uses_generic_placeholder(tmp_path: Path) -> None:
+    app = create_app(
+        Settings(
+            storage_dir=tmp_path / "storage",
+            frontend_dist_dir=tmp_path / "frontend",
+            le_loi_image_path=tmp_path / "missing-014.jpg",
+        )
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1/characters/le_loi/image")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/svg+xml")
+    assert "Ảnh nhân vật đang chờ cấu hình".encode() in response.content
 
 
 def test_talk_api_exposes_downloadable_video_after_pipeline(tmp_path: Path) -> None:
