@@ -343,6 +343,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .character-panel { padding: 13px; display: flex; flex-direction: column; }
 .portrait-frame {
   position: relative;
+  container-type: size;
   flex: 1;
   min-height: 500px;
   overflow: hidden;
@@ -350,13 +351,40 @@ button { -webkit-tap-highlight-color: transparent; }
   border-radius: 20px;
   background: linear-gradient(145deg, #def4ff, #fff2bd);
 }
-.character-media { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; object-position: center 22%; }
+.character-media-canvas {
+  /* Giữ đúng phép object-fit: cover để ảnh nền và video dùng chung tọa độ. */
+  --character-media-size: max(100cqw, 100cqh);
+  width: var(--character-media-size);
+  height: var(--character-media-size);
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translate(-50%, -22%);
+}
+.character-media {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+}
+.character-face-video {
+  position: absolute;
+  z-index: 1;
+  object-fit: cover;
+  background: transparent;
+}
+.character-video-fallback { z-index: 1; }
+video.character-face-video,
 video.character-media {
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
-  background: #dff3fb;
 }
+video.character-face-video::-webkit-media-controls,
+video.character-face-video::-webkit-media-controls-enclosure,
+video.character-face-video::-webkit-media-controls-panel,
+video.character-face-video::-webkit-media-controls-overlay-play-button,
 video.character-media::-webkit-media-controls,
 video.character-media::-webkit-media-controls-enclosure,
 video.character-media::-webkit-media-controls-panel,
@@ -372,11 +400,11 @@ video.character-media::-webkit-media-controls-overlay-play-button {
 .character-image-error svg { width: 32px; height: 32px; }
 .character-image-error span { max-width: 360px; font-size: 13px; line-height: 1.5; }
 .portrait-vignette {
-  position: absolute; inset: 0; pointer-events: none;
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
   background: linear-gradient(to bottom, rgba(23,50,77,0) 48%, rgba(23,50,77,.18) 100%);
 }
 .era-badge {
-  position: absolute; top: 18px; left: 18px; border: 1px solid #e9bd42; border-radius: 999px;
+  position: absolute; top: 18px; left: 18px; z-index: 3; border: 1px solid #e9bd42; border-radius: 999px;
   background: rgba(255, 241, 174, .92); backdrop-filter: blur(8px); color: #704700;
   padding: 9px 12px; font-size: 9px; font-weight: 800; letter-spacing: .14em;
   box-shadow: 0 7px 18px rgba(104, 75, 7, .12);

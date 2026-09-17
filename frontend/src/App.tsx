@@ -22,6 +22,7 @@ import {
   useRef,
   useState,
 } from "react";
+import headPositionsData from "./head_position.json";
 
 type JobStage =
   | "queued"
@@ -83,11 +84,25 @@ type StoredConversationState = {
 type VoiceState = "idle" | "connecting" | "listening" | "transcribing";
 type ServiceState = "checking" | "ready" | "degraded" | "offline";
 
+type HeadPosition = {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+};
+
 const SESSION_STORAGE_KEY = "digital-hero-conversations-v1";
 const LEGACY_SESSION_KEY = "digital-hero-session";
 const SIDEBAR_STORAGE_KEY = "digital-hero-sidebar";
 const SIDEBAR_DRAWER_QUERY = "(max-width: 1100px)";
 const NEW_SESSION_TITLE = "Cuộc trò chuyện mới";
+// head_position.json dùng hệ tọa độ của ảnh chân dung gốc 2048 × 2048.
+const CHARACTER_IMAGE_SIZE = 2048;
+const HEAD_POSITIONS = headPositionsData as Record<string, HeadPosition>;
+
+function coordinateToPercent(value: number) {
+  return `${(value / CHARACTER_IMAGE_SIZE) * 100}%`;
+}
 
 const FALLBACK_CHARACTERS: CharacterProfile[] = [
   {
@@ -266,6 +281,15 @@ function App() {
   const activeCharacter =
     characters.find((character) => character.id === activeSession?.character_id) ||
     FALLBACK_CHARACTERS[0];
+  const activeHeadPosition = HEAD_POSITIONS[activeCharacter.image_id];
+  const faceVideoStyle = activeHeadPosition
+    ? {
+        left: coordinateToPercent(activeHeadPosition.x),
+        top: coordinateToPercent(activeHeadPosition.y),
+        width: coordinateToPercent(activeHeadPosition.width),
+        height: coordinateToPercent(activeHeadPosition.height),
+      }
+    : undefined;
   const messages = activeSession?.messages || [];
   const characterSessions = sessions
     .filter((session) => session.character_id === activeCharacter.id)
@@ -912,23 +936,7 @@ function App() {
         <main className="main-grid">
           <section className="character-panel" aria-labelledby="character-title">
             <div className="portrait-frame">
-              {videoUrl ? (
-                <video
-                  ref={videoRef}
-                  className="character-media"
-                  src={videoUrl}
-                  autoPlay
-                  controls={false}
-                  playsInline
-                  controlsList="nodownload noplaybackrate noremoteplayback"
-                  disablePictureInPicture
-                  disableRemotePlayback
-                  tabIndex={-1}
-                  onContextMenu={(event) => event.preventDefault()}
-                  onEnded={resetVideo}
-                  aria-label={`Video ${activeCharacter.display_name} trả lời`}
-                />
-              ) : imageError ? (
+              {imageError ? (
                 <div className="character-image-error" role="alert">
                   <AlertCircle aria-hidden="true" />
                   <span>
@@ -936,14 +944,40 @@ function App() {
                   </span>
                 </div>
               ) : (
-                <img
-                  key={activeCharacter.id}
-                  className="character-media"
-                  src={activeCharacter.image_url}
-                  alt={`Nhân vật lịch sử ${activeCharacter.display_name}`}
-                  onLoad={() => setImageError(false)}
-                  onError={() => setImageError(true)}
-                />
+                <div className="character-media-canvas">
+                  <img
+                    key={activeCharacter.id}
+                    className="character-media"
+                    src={activeCharacter.image_url}
+                    alt={`Nhân vật lịch sử ${activeCharacter.display_name}`}
+                    onLoad={() => setImageError(false)}
+                    onError={() => setImageError(true)}
+                  />
+
+                  {videoUrl ? (
+                    <video
+                      ref={videoRef}
+                      className={
+                        activeHeadPosition
+                          ? "character-face-video"
+                          : "character-media character-video-fallback"
+                      }
+                      style={faceVideoStyle}
+                      src={videoUrl}
+                      autoPlay
+                      controls={false}
+                      playsInline
+                      controlsList="nodownload noplaybackrate noremoteplayback"
+                      disablePictureInPicture
+                      disableRemotePlayback
+                      tabIndex={-1}
+                      onContextMenu={(event) => event.preventDefault()}
+                      onError={resetVideo}
+                      onEnded={resetVideo}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                </div>
               )}
 
               <div className="portrait-vignette" aria-hidden="true" />

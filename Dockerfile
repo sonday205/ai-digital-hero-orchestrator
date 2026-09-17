@@ -36,7 +36,6 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir --requirement requirements.txt
 
 COPY app/ ./app/
-COPY assets/ ./assets/
 COPY --from=frontend-builder /frontend/dist ./frontend-dist/
 
 RUN mkdir -p /app/storage/jobs
