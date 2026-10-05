@@ -188,6 +188,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
         path = character.image_path.expanduser()
+        if not path.is_file() and not path.suffix:
+            for extension in (".jpg", ".jpeg", ".png", ".svg"):
+                candidate = path.with_suffix(extension)
+                if candidate.is_file():
+                    path = candidate
+                    break
         if not path.is_file():
             path = Path(__file__).resolve().parents[1] / "assets" / f"{character.image_id}.svg"
         if not path.is_file():

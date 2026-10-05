@@ -32,6 +32,7 @@ async def proxy_voice(websocket: WebSocket, character_id: str, settings: Setting
     try:
         async with websockets.connect(
             upstream_url,
+            additional_headers=settings.llm_headers or None,
             open_timeout=settings.voice_connect_timeout_seconds,
             max_size=None,
         ) as upstream:

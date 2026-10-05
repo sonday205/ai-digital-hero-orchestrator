@@ -14,7 +14,9 @@ class SuccessfulClients:
         self.voice_id: str | None = None
         self.image_id: str | None = None
 
-    async def ask_llm(self, session_id: str, message: str, character_id: str | None = None):
+    async def ask_llm(
+        self, session_id: str, message: str, character_id: str | None = None
+    ):
         self.character_id = character_id
         return "Chú sinh năm 1924 tại Thanh Hóa.", "request-1"
 
@@ -63,7 +65,13 @@ async def test_full_pipeline_completes(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_le_loi_pipeline_uses_character_voice_and_image_014(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "character_id,media_id",
+    [("le_loi", "014"), ("ly_tu_trong", "015"), ("ho_xuan_huong", "047")],
+)
+async def test_pipeline_uses_character_voice_and_image(
+    tmp_path: Path, character_id: str, media_id: str
+) -> None:
     settings = Settings(storage_dir=tmp_path)
     jobs = JobStore()
     clients = SuccessfulClients()
@@ -72,7 +80,7 @@ async def test_le_loi_pipeline_uses_character_voice_and_image_014(tmp_path: Path
     job = await service.submit(
         "demo-session-014",
         "Khởi nghĩa Lam Sơn diễn ra như thế nào?",
-        "le_loi",
+        character_id,
     )
     for _ in range(100):
         current = await jobs.get(job.job_id)
@@ -83,8 +91,8 @@ async def test_le_loi_pipeline_uses_character_voice_and_image_014(tmp_path: Path
     current = await jobs.get(job.job_id)
     assert current is not None
     assert current.status == JobStatus.COMPLETED
-    assert current.character_id == "le_loi"
-    assert clients.character_id == "le_loi"
-    assert clients.voice_id == "014"
-    assert clients.image_id == "014"
+    assert current.character_id == character_id
+    assert clients.character_id == character_id
+    assert clients.voice_id == media_id
+    assert clients.image_id == media_id
     await service.close()

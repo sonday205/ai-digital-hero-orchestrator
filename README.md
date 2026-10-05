@@ -7,30 +7,16 @@ Browser
   ├── text ───────────────────────────────┐
   └── microphone → WebSocket proxy → LLM │
                                            ▼
-LLM :8005 → OmniVoice TTS :8989 → SoulX LipSync :8990
+LLM_V3 :8005 → OmniVoice TTS :8989 → SoulX LipSync :8990
                                            │
                                            ▼
                            Orchestrator + frontend :8991
 ```
 
-Phiên bản hiện tại hỗ trợ 14 nhân vật:
-
-| Nhân vật | `character_id` LLM | `voice_id` TTS | `image_id` LipSync |
-| --- | --- | --- | --- |
-| Tô Vĩnh Diện | `to_vinh_dien` | `001` | `001` |
-| Võ Thị Sáu | `vo_thi_sau` | `002` | `002` |
-| Kim Đồng | `kim_dong` | `003` | `003` |
-| Lê Văn Tám | `le_van_tam` | `004` | `004` |
-| Nguyễn Văn Trỗi | `nguyen_van_troi` | `005` | `005` |
-| Lê Hồng Phong | `le_hong_phong` | `006` | `006` |
-| Nguyễn Bỉnh Khiêm | `nguyen_binh_khiem` | `007` | `007` |
-| Nguyễn Bá Ngọc | `nguyen_ba_ngoc` | `008` | `008` |
-| Nữ tướng Lê Chân | `le_chan` | `009` | `009` |
-| Công chúa Lê Ngọc Hân | `le_ngoc_han` | `010` | `010` |
-| Anh hùng Núp (Đinh Núp) | `dinh_nup` | `011` | `011` |
-| Ngô Quyền | `ngo_quyen` | `012` | `012` |
-| Quang Trung - Nguyễn Huệ | `quang_trung_nguyen_hue` | `013` | `013` |
-| Lê Lợi | `le_loi` | `014` | `014` |
+Phiên bản hiện tại hỗ trợ **47 nhân vật**, đồng bộ ID với LLM_V3.
+Danh sách đầy đủ: [CHARACTERS.md](CHARACTERS.md).
+Catalog nằm ở `data/characters.json`; không cần thêm một khối Python cho mỗi nhân vật.
+Hướng dẫn cập nhật server: [LLM_V3_MIGRATION.md](docs/LLM_V3_MIGRATION.md).
 
 - Frontend: React + Vite + Tailwind CSS.
 - Backend: FastAPI.
@@ -132,10 +118,10 @@ KIM_DONG_IMAGE_HOST_PATH=/home/cbrain/ai_digital_hero/LipSync_CB/images/003.jpg
 ```
 
 Các file này được mount read-only vào container orchestrator để frontend hiển thị
-ảnh tĩnh. Nếu chưa cấu hình, nhân vật `003`–`014` dùng SVG giữ chỗ chung trên
+ảnh tĩnh. Nếu chưa cấu hình, nhân vật dùng SVG giữ chỗ chung trên
 frontend. SVG này không phải ảnh đầu vào cho model LipSync.
 
-LipSync vẫn tự resolve các mã `001`–`014` trong image storage của chính service;
+LipSync vẫn tự resolve các mã `001`–`047` trong image storage của chính service;
 orchestrator không gửi đường dẫn filesystem của ảnh qua API.
 
 Khi chạy backend trực tiếp trên host thay vì Docker, dùng:
@@ -158,10 +144,15 @@ tts_omnivoice_with_redis/voice_data/003/ref_audio.mp3 (hoặc .wav)
 ...
 tts_omnivoice_with_redis/voice_data/014/ref.txt
 tts_omnivoice_with_redis/voice_data/014/ref_audio.mp3 (hoặc .wav)
+...
+tts_omnivoice_with_redis/voice_data/047/ref.txt
+tts_omnivoice_with_redis/voice_data/047/ref_audio.mp3 (hoặc .wav)
 
 lipsync_cb_api/images/003.jpg (hoặc .jpeg/.png)
 ...
 lipsync_cb_api/images/014.jpg (hoặc .jpeg/.png)
+...
+lipsync_cb_api/images/047.jpg (hoặc .jpeg/.png)
 ```
 
 Hiện orchestrator sẽ gửi đúng `voice_id` và `image_id`; TTS/LipSync chịu trách

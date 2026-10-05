@@ -18,10 +18,13 @@ services:
       # 127.0.0.1 của chúng sẽ trỏ nhầm về chính container orchestrator.
       LLM_BASE_URL: ${DOCKER_LLM_BASE_URL:-http://host.docker.internal:8005}
       LLM_WS_BASE_URL: ${DOCKER_LLM_WS_BASE_URL:-ws://host.docker.internal:8005}
+      LLM_API_KEY: ${LLM_API_KEY:-}
       TTS_BASE_URL: ${DOCKER_TTS_BASE_URL:-http://host.docker.internal:8989}
       LIPSYNC_BASE_URL: ${DOCKER_LIPSYNC_BASE_URL:-http://host.docker.internal:8990}
 
       CHARACTER_ID: ${CHARACTER_ID:-to_vinh_dien}
+      CHARACTER_OVERRIDES_JSON: ${CHARACTER_OVERRIDES_JSON:-}
+      PORTRAIT_DIR: /app/portraits
       VOICE_ID: ${VOICE_ID:-001}
       IMAGE_ID: ${IMAGE_ID:-001}
       VO_THI_SAU_VOICE_ID: ${VO_THI_SAU_VOICE_ID:-002}
@@ -74,9 +77,10 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./storage:/app/storage
+      - ${CHARACTER_PORTRAITS_HOST_DIR:-./assets}:/app/portraits:ro
       # Local dùng SVG chờ. Trên SSH, các biến *_HOST_PATH trỏ tới ảnh thật.
-      - ${TO_VINH_DIEN_IMAGE_HOST_PATH:-${CHARACTER_IMAGE_HOST_PATH:-${CHARACTER_IMAGE_PATH:-./assets/001.svg}}}:/app/character-images/001:ro
-      - ${VO_THI_SAU_IMAGE_HOST_PATH:-./assets/002.svg}:/app/character-images/002:ro
+      - ${TO_VINH_DIEN_IMAGE_HOST_PATH:-${CHARACTER_IMAGE_HOST_PATH:-${CHARACTER_IMAGE_PATH:-./assets/placeholder.svg}}}:/app/character-images/001:ro
+      - ${VO_THI_SAU_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/002:ro
       - ${KIM_DONG_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/003:ro
       - ${LE_VAN_TAM_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/004:ro
       - ${NGUYEN_VAN_TROI_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/005:ro

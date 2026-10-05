@@ -29,6 +29,7 @@ async def test_character_mapping_is_forwarded_to_all_upstreams(tmp_path: Path) -
         payload = json.loads(request.content) if request.content else {}
         if request.url.path.endswith("/v1/characters/vo_thi_sau/chat"):
             captured["llm_path"] = request.url.path
+            captured["llm_api_key"] = request.headers.get("X-API-Key")
             return httpx.Response(200, json={"answer": "Chị chào em.", "request_id": "llm-1"})
         if request.url.path.endswith("/api/v1/tts/generate"):
             captured["voice_id"] = payload.get("voice_id")
@@ -40,11 +41,14 @@ async def test_character_mapping_is_forwarded_to_all_upstreams(tmp_path: Path) -
             "/v1/characters/vo_thi_sau/sessions/demo-session-002"
         ):
             captured["delete_path"] = request.url.path
+            captured["delete_api_key"] = request.headers.get("X-API-Key")
             return httpx.Response(200, json={"session_id": "demo-session-002", "deleted": True})
         return httpx.Response(404)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
-        clients = UpstreamClients(make_settings(tmp_path), http)
+        settings = make_settings(tmp_path)
+        settings.llm_api_key = "application-secret"
+        clients = UpstreamClients(settings, http)
         await clients.ask_llm("demo-session-002", "Xin chào", "vo_thi_sau")
         await clients.start_tts("Chị chào em.", "002")
         await clients.start_lipsync("/dev/shm/audio/tts-1.wav", "002")
@@ -53,9 +57,11 @@ async def test_character_mapping_is_forwarded_to_all_upstreams(tmp_path: Path) -
     assert deleted is True
     assert captured == {
         "llm_path": "/v1/characters/vo_thi_sau/chat",
+        "llm_api_key": "application-secret",
         "voice_id": "002",
         "image_id": "002",
         "delete_path": "/v1/characters/vo_thi_sau/sessions/demo-session-002",
+        "delete_api_key": "application-secret",
     }
 
 

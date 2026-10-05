@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="640" viewBox="0 0 480 640">
+  <rect width="480" height="640" fill="#18283b"/>
+  <circle cx="240" cy="215" r="76" fill="#64748b"/>
+  <path d="M100 480v-45a140 140 0 0 1 280 0v45" fill="#64748b"/>
+  <text x="240" y="550" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="18">Ảnh nhân vật đang chờ cấu hình</text>
+</svg>

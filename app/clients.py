@@ -5,7 +5,7 @@ import json
 import time
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote, urljoin, urlsplit, urlunsplit
+from urllib.parse import quote, urlsplit, urlunsplit
 
 import httpx
 
@@ -39,6 +39,7 @@ class UpstreamClients:
             "POST",
             f"{self.settings.llm_base_url}/v1/characters/{resolved_character_id}/chat",
             timeout=self.settings.llm_timeout_seconds,
+            headers=self.settings.llm_headers,
             json={"session_id": session_id, "message": message, "debug": False},
         )
         answer = str(data.get("answer") or "").strip()
@@ -59,6 +60,7 @@ class UpstreamClients:
                 f"{encoded_character_id}/sessions/{encoded_session_id}"
             ),
             timeout=self.settings.llm_timeout_seconds,
+            headers=self.settings.llm_headers,
         )
         return bool(data.get("deleted"))
 

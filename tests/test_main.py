@@ -80,7 +80,7 @@ def test_character_api_lists_all_profiles_and_serves_vo_thi_sau_image(tmp_path: 
 
     assert characters.status_code == 200
     profiles = {item["id"]: item for item in characters.json()}
-    assert set(profiles) == {
+    assert set(profiles) >= {
         "to_vinh_dien",
         "vo_thi_sau",
         "kim_dong",
@@ -96,11 +96,21 @@ def test_character_api_lists_all_profiles_and_serves_vo_thi_sau_image(tmp_path: 
         "quang_trung_nguyen_hue",
         "le_loi",
     }
-    assert len(characters.json()) == 14
+    assert len(characters.json()) == 47
+    assert profiles["ho_xuan_huong"]["voice_id"] == "047"
     assert profiles["vo_thi_sau"]["voice_id"] == "002"
     assert profiles["vo_thi_sau"]["image_id"] == "002"
     assert image.status_code == 200
     assert image.content == vo_thi_sau_image.read_bytes()
+
+
+def test_new_character_portrait_resolves_extension(tmp_path: Path) -> None:
+    image = tmp_path / "047.jpg"
+    image.write_bytes(b"\xff\xd8\xffnew-character")
+    with TestClient(create_app(Settings(_env_file=None, portrait_dir=tmp_path))) as client:
+        response = client.get("/api/v1/characters/ho_xuan_huong/image")
+    assert response.status_code == 200
+    assert response.content == image.read_bytes()
 
 
 def test_character_without_configured_portrait_uses_generic_placeholder(tmp_path: Path) -> None:
