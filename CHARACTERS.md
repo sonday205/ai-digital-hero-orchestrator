@@ -1,6 +1,6 @@
-# Danh sách 47 nhân vật
+# Danh sách 48 nhân vật
 
-Nguồn cấu hình: `data/characters.json`. Giữ nguyên mapping 001–014; bổ sung 015–047.
+Nguồn cấu hình: `data/characters.json`. Giữ nguyên mapping 001–014; bổ sung các nhân vật khác; mã 019 là Lê Đức Thúy, nguyên Thống đốc Ngân hàng Nhà nước.
 Các mã media là mapping mặc định, không chứng minh file ảnh/giọng đã tồn tại trên server.
 
 | Nhân vật | character_id LLM | voice_id TTS | image_id LipSync |
@@ -19,12 +19,12 @@ Các mã media là mapping mặc định, không chứng minh file ảnh/giọng
 | Ngô Quyền | `ngo_quyen` | `012` | `012` |
 | Quang Trung - Nguyễn Huệ | `quang_trung_nguyen_hue` | `013` | `013` |
 | Lê Lợi | `le_loi` | `014` | `014` |
-| Lý Tự Trọng | `ly_tu_trong` | `015` | `015` |
-| Phạm Ngọc Thảo | `pham_ngoc_thao` | `016` | `016` |
-| Vũ Ngọc Nhạ | `vu_ngoc_nha` | `017` | `017` |
-| Đặng Trần Đức | `dang_tran_duc` | `018` | `018` |
-| Phạm Xuân Ẩn | `pham_xuan_an` | `019` | `019` |
-| Lê Hữu Thúy | `le_huu_thuy` | `020` | `020` |
+| Đại tá Phạm Ngọc Thảo | `pham_ngoc_thao` | `015` | `015` |
+| Thiếu tướng Vũ Ngọc Nhạ | `vu_ngoc_nha` | `016` | `016` |
+| Thiếu tướng Đặng Trần Đức | `dang_tran_duc` | `017` | `017` |
+| Thiếu tướng Phạm Xuân Ẩn | `pham_xuan_an` | `018` | `018` |
+| Lê Đức Thúy (nguyên Thống đốc) | `le_duc_thuy` | `019` | `019` |
+| Đại tá Lê Hữu Thúy | `le_huu_thuy` | `020` | `020` |
 | Hùng Vương | `hung_vuong` | `021` | `021` |
 | An Dương Vương | `an_duong_vuong` | `022` | `022` |
 | Hai Bà Trưng | `hai_ba_trung` | `023` | `023` |
@@ -52,5 +52,10 @@ Các mã media là mapping mặc định, không chứng minh file ảnh/giọng
 | Nguyễn Thị Duệ | `nguyen_thi_due` | `045` | `045` |
 | Đoàn Thị Điểm | `doan_thi_diem` | `046` | `046` |
 | Hồ Xuân Hương | `ho_xuan_huong` | `047` | `047` |
+| Lý Tự Trọng | `ly_tu_trong` | `048` | `048` |
 
 Hùng Vương là nhóm vua Hùng; Hai Bà Trưng là một hồ sơ chung. Lê Hữu Thúy dùng ID `le_huu_thuy` (không tạo ID theo tên bị ghi nhầm trong tài liệu Word).
+
+019 được cấu hình qua `LE_DUC_THUY_VOICE_ID` / `LE_DUC_THUY_IMAGE_ID`.
+Dữ liệu xác định nhà kinh tế ngân hàng, không gán quân hàm Thiếu tướng.
+Không gắn dữ liệu của Lê Hữu Thúy cho Lê Đức Thúy.

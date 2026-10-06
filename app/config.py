@@ -81,6 +81,16 @@ class Settings(BaseSettings):
     quang_trung_nguyen_hue_image_id: str = "013"
     le_loi_voice_id: str = "014"
     le_loi_image_id: str = "014"
+    pham_ngoc_thao_voice_id: str = "015"
+    pham_ngoc_thao_image_id: str = "015"
+    vu_ngoc_nha_voice_id: str = "016"
+    vu_ngoc_nha_image_id: str = "016"
+    dang_tran_duc_voice_id: str = "017"
+    dang_tran_duc_image_id: str = "017"
+    pham_xuan_an_voice_id: str = "018"
+    pham_xuan_an_image_id: str = "018"
+    le_duc_thuy_voice_id: str = "019"
+    le_duc_thuy_image_id: str = "019"
 
     llm_timeout_seconds: float = 45.0
     tts_timeout_seconds: float = 900.0
@@ -112,6 +122,11 @@ class Settings(BaseSettings):
     ngo_quyen_image_path: Path = PROJECT_ROOT / "assets" / "012.svg"
     quang_trung_nguyen_hue_image_path: Path = PROJECT_ROOT / "assets" / "013.svg"
     le_loi_image_path: Path = PROJECT_ROOT / "assets" / "014.svg"
+    pham_ngoc_thao_image_path: Path = PROJECT_ROOT / "assets" / "015"
+    vu_ngoc_nha_image_path: Path = PROJECT_ROOT / "assets" / "016"
+    dang_tran_duc_image_path: Path = PROJECT_ROOT / "assets" / "017"
+    pham_xuan_an_image_path: Path = PROJECT_ROOT / "assets" / "018"
+    le_duc_thuy_image_path: Path = PROJECT_ROOT / "assets" / "019"
 
     character_catalog_path: Path = PROJECT_ROOT / "data" / "characters.json"
     portrait_dir: Path = PROJECT_ROOT / "assets"

@@ -352,7 +352,7 @@ button { -webkit-tap-highlight-color: transparent; }
   background: linear-gradient(145deg, #def4ff, #fff2bd);
 }
 .character-media-canvas {
-  /* Giữ đúng phép object-fit: cover để ảnh nền và video dùng chung tọa độ. */
+  /* Bố cục ảnh tĩnh trước và sau khi phát video. */
   --character-media-size: max(100cqw, 100cqh);
   width: var(--character-media-size);
   height: var(--character-media-size);
@@ -368,23 +368,16 @@ button { -webkit-tap-highlight-color: transparent; }
   inset: 0;
   object-fit: cover;
 }
-.character-face-video {
-  position: absolute;
-  z-index: 1;
-  object-fit: cover;
-  background: transparent;
+.character-video {
+  /* LipSync trả toàn bộ ảnh: giữ đủ khung hình, không crop hoặc ghép vùng mặt. */
+  object-fit: contain;
+  background: #def4ff;
 }
-.character-video-fallback { z-index: 1; }
-video.character-face-video,
 video.character-media {
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
 }
-video.character-face-video::-webkit-media-controls,
-video.character-face-video::-webkit-media-controls-enclosure,
-video.character-face-video::-webkit-media-controls-panel,
-video.character-face-video::-webkit-media-controls-overlay-play-button,
 video.character-media::-webkit-media-controls,
 video.character-media::-webkit-media-controls-enclosure,
 video.character-media::-webkit-media-controls-panel,

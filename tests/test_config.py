@@ -18,11 +18,12 @@ EXPECTED_CHARACTER_MAPPING = {
     "ngo_quyen": ("012", "012"),
     "quang_trung_nguyen_hue": ("013", "013"),
     "le_loi": ("014", "014"),
-    "ly_tu_trong": ("015", "015"),
-    "pham_ngoc_thao": ("016", "016"),
-    "vu_ngoc_nha": ("017", "017"),
-    "dang_tran_duc": ("018", "018"),
-    "pham_xuan_an": ("019", "019"),
+    "ly_tu_trong": ("048", "048"),
+    "pham_ngoc_thao": ("015", "015"),
+    "vu_ngoc_nha": ("016", "016"),
+    "dang_tran_duc": ("017", "017"),
+    "pham_xuan_an": ("018", "018"),
+    "le_duc_thuy": ("019", "019"),
     "le_huu_thuy": ("020", "020"),
     "hung_vuong": ("021", "021"),
     "an_duong_vuong": ("022", "022"),
@@ -63,8 +64,8 @@ def test_all_llm_characters_have_voice_and_lipsync_mapping() -> None:
     }
 
     assert actual_mapping == EXPECTED_CHARACTER_MAPPING
-    assert len({character.voice_id for character in settings.characters}) == 47
-    assert len({character.image_id for character in settings.characters}) == 47
+    assert len({character.voice_id for character in settings.characters}) == 48
+    assert len({character.image_id for character in settings.characters}) == 48
 
 
 def test_generic_character_override() -> None:
@@ -107,3 +108,23 @@ def test_llm_api_key_is_only_exposed_as_server_to_server_header() -> None:
     assert Settings(llm_api_key="  application-secret  ").llm_headers == {
         "X-API-Key": "application-secret"
     }
+
+
+@pytest.mark.parametrize(
+    "character_id,media_id",
+    [
+        ("pham_ngoc_thao", "015"),
+        ("vu_ngoc_nha", "016"),
+        ("dang_tran_duc", "017"),
+        ("pham_xuan_an", "018"),
+        ("le_duc_thuy", "019"),
+    ],
+)
+def test_new_character_environment_mapping(monkeypatch, character_id, media_id) -> None:
+    monkeypatch.setenv(f"{character_id.upper()}_VOICE_ID", f"voice-{media_id}")
+    monkeypatch.setenv(f"{character_id.upper()}_IMAGE_ID", f"image-{media_id}")
+    monkeypatch.setenv(f"{character_id.upper()}_IMAGE_PATH", f"/tmp/{media_id}.jpg")
+    character = Settings(_env_file=None).get_character(character_id)
+    assert character.voice_id == f"voice-{media_id}"
+    assert character.image_id == f"image-{media_id}"
+    assert str(character.image_path) == f"/tmp/{media_id}.jpg"

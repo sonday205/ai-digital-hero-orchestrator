@@ -96,7 +96,7 @@ def test_character_api_lists_all_profiles_and_serves_vo_thi_sau_image(tmp_path: 
         "quang_trung_nguyen_hue",
         "le_loi",
     }
-    assert len(characters.json()) == 47
+    assert len(characters.json()) == 48
     assert profiles["ho_xuan_huong"]["voice_id"] == "047"
     assert profiles["vo_thi_sau"]["voice_id"] == "002"
     assert profiles["vo_thi_sau"]["image_id"] == "002"

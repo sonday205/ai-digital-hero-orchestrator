@@ -13,7 +13,7 @@ LLM_V3 :8005 → OmniVoice TTS :8989 → SoulX LipSync :8990
                            Orchestrator + frontend :8991
 ```
 
-Phiên bản hiện tại hỗ trợ **47 nhân vật**, đồng bộ ID với LLM_V3.
+Phiên bản hiện tại hỗ trợ **48 nhân vật**, đồng bộ ID với LLM_V3.
 Danh sách đầy đủ: [CHARACTERS.md](CHARACTERS.md).
 Catalog nằm ở `data/characters.json`; không cần thêm một khối Python cho mỗi nhân vật.
 Hướng dẫn cập nhật server: [LLM_V3_MIGRATION.md](docs/LLM_V3_MIGRATION.md).
@@ -35,7 +35,9 @@ Hướng dẫn cập nhật server: [LLM_V3_MIGRATION.md](docs/LLM_V3_MIGRATION.
 6. Job chuyển đúng `image_id` cùng `audio_path` cho LipSync.
 7. Job polling LipSync, xin URL có chữ ký và tải MP4 về storage của orchestrator.
 8. Chỉ khi MP4 tải xong, API mới trả cả `answer` và `video_url`.
-9. Frontend thay ảnh tĩnh bằng video; video phát xong tự quay lại ảnh.
+9. Frontend thay toàn bộ ảnh tĩnh bằng video LipSync, giữ đầy đủ khung hình và tỷ lệ
+   bằng `object-fit: contain`; không ghép riêng vùng mặt. Video phát xong hoặc lỗi
+   thì tự quay lại ảnh.
 
 Voice không gọi LLM chat tự động. WebSocket voice chỉ stream transcript vào ô nhập theo từng `transcript.delta`. Khi nhận `transcript.final`, người dùng vẫn có thể sửa câu hỏi rồi bấm gửi.
 
@@ -121,7 +123,7 @@ Các file này được mount read-only vào container orchestrator để fronte
 ảnh tĩnh. Nếu chưa cấu hình, nhân vật dùng SVG giữ chỗ chung trên
 frontend. SVG này không phải ảnh đầu vào cho model LipSync.
 
-LipSync vẫn tự resolve các mã `001`–`047` trong image storage của chính service;
+LipSync vẫn tự resolve các mã `001`–`048` trong image storage của chính service;
 orchestrator không gửi đường dẫn filesystem của ảnh qua API.
 
 Khi chạy backend trực tiếp trên host thay vì Docker, dùng:

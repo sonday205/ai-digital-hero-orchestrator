@@ -67,7 +67,17 @@ async def test_full_pipeline_completes(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "character_id,media_id",
-    [("le_loi", "014"), ("ly_tu_trong", "015"), ("ho_xuan_huong", "047")],
+    [
+        ("le_loi", "014"),
+        ("pham_ngoc_thao", "015"),
+        ("vu_ngoc_nha", "016"),
+        ("dang_tran_duc", "017"),
+        ("pham_xuan_an", "018"),
+        ("le_duc_thuy", "019"),
+        ("le_huu_thuy", "020"),
+        ("ly_tu_trong", "048"),
+        ("ho_xuan_huong", "047"),
+    ],
 )
 async def test_pipeline_uses_character_voice_and_image(
     tmp_path: Path, character_id: str, media_id: str

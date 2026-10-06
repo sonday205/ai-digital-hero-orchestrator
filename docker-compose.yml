@@ -53,6 +53,16 @@ services:
       QUANG_TRUNG_NGUYEN_HUE_IMAGE_ID: ${QUANG_TRUNG_NGUYEN_HUE_IMAGE_ID:-013}
       LE_LOI_VOICE_ID: ${LE_LOI_VOICE_ID:-014}
       LE_LOI_IMAGE_ID: ${LE_LOI_IMAGE_ID:-014}
+      PHAM_NGOC_THAO_VOICE_ID: ${PHAM_NGOC_THAO_VOICE_ID:-015}
+      PHAM_NGOC_THAO_IMAGE_ID: ${PHAM_NGOC_THAO_IMAGE_ID:-015}
+      VU_NGOC_NHA_VOICE_ID: ${VU_NGOC_NHA_VOICE_ID:-016}
+      VU_NGOC_NHA_IMAGE_ID: ${VU_NGOC_NHA_IMAGE_ID:-016}
+      DANG_TRAN_DUC_VOICE_ID: ${DANG_TRAN_DUC_VOICE_ID:-017}
+      DANG_TRAN_DUC_IMAGE_ID: ${DANG_TRAN_DUC_IMAGE_ID:-017}
+      PHAM_XUAN_AN_VOICE_ID: ${PHAM_XUAN_AN_VOICE_ID:-018}
+      PHAM_XUAN_AN_IMAGE_ID: ${PHAM_XUAN_AN_IMAGE_ID:-018}
+      LE_DUC_THUY_VOICE_ID: ${LE_DUC_THUY_VOICE_ID:-019}
+      LE_DUC_THUY_IMAGE_ID: ${LE_DUC_THUY_IMAGE_ID:-019}
       CHARACTER_IMAGE_PATH: /app/character-images/001
       VO_THI_SAU_IMAGE_PATH: /app/character-images/002
       KIM_DONG_IMAGE_PATH: /app/character-images/003
@@ -67,6 +77,11 @@ services:
       NGO_QUYEN_IMAGE_PATH: /app/character-images/012
       QUANG_TRUNG_NGUYEN_HUE_IMAGE_PATH: /app/character-images/013
       LE_LOI_IMAGE_PATH: /app/character-images/014
+      PHAM_NGOC_THAO_IMAGE_PATH: /app/character-images/015
+      VU_NGOC_NHA_IMAGE_PATH: /app/character-images/016
+      DANG_TRAN_DUC_IMAGE_PATH: /app/character-images/017
+      PHAM_XUAN_AN_IMAGE_PATH: /app/character-images/018
+      LE_DUC_THUY_IMAGE_PATH: /app/character-images/019
 
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-45}
       TTS_TIMEOUT_SECONDS: ${TTS_TIMEOUT_SECONDS:-900}
@@ -93,3 +108,8 @@ services:
       - ${NGO_QUYEN_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/012:ro
       - ${QUANG_TRUNG_NGUYEN_HUE_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/013:ro
       - ${LE_LOI_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/014:ro
+      - ${PHAM_NGOC_THAO_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/015:ro
+      - ${VU_NGOC_NHA_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/016:ro
+      - ${DANG_TRAN_DUC_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/017:ro
+      - ${PHAM_XUAN_AN_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/018:ro
+      - ${LE_DUC_THUY_IMAGE_HOST_PATH:-./assets/placeholder.svg}:/app/character-images/019:ro

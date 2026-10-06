@@ -196,32 +196,18 @@
     "image_id": "014"
   },
   {
-    "id": "ly_tu_trong",
-    "display_name": "Lý Tự Trọng",
-    "self_pronoun": "anh",
-    "student_pronoun": "cháu",
-    "short_description": "Lý Tự Trọng tên thật là Lê Hữu Trọng, là nhà cách mạng trẻ tuổi của Việt Nam.",
-    "title": "NHÂN VẬT LỊCH SỬ",
-    "life_years": "",
-    "era_label": "TÌM HIỂU LỊCH SỬ",
-    "quote": "",
-    "greeting": "Chào cháu. Hãy cùng tìm hiểu về Lý Tự Trọng và những câu chuyện lịch sử nhé.",
-    "voice_id": "015",
-    "image_id": "015"
-  },
-  {
     "id": "pham_ngoc_thao",
     "display_name": "Phạm Ngọc Thảo",
     "self_pronoun": "ông",
     "student_pronoun": "cháu",
     "short_description": "Phạm Ngọc Thảo là đại tá tình báo của Quân đội nhân dân Việt Nam, hoạt động trong bộ máy chính quyền và quân đội Việt Nam Cộng hòa.",
-    "title": "NHÂN VẬT LỊCH SỬ",
+    "title": "ĐẠI TÁ TÌNH BÁO",
     "life_years": "",
     "era_label": "TÌM HIỂU LỊCH SỬ",
     "quote": "",
     "greeting": "Chào cháu. Hãy cùng tìm hiểu về Phạm Ngọc Thảo và những câu chuyện lịch sử nhé.",
-    "voice_id": "016",
-    "image_id": "016"
+    "voice_id": "015",
+    "image_id": "015"
   },
   {
     "id": "vu_ngoc_nha",
@@ -229,13 +215,13 @@
     "self_pronoun": "ông",
     "student_pronoun": "cháu",
     "short_description": "Vũ Ngọc Nhạ là thiếu tướng tình báo của Quân đội nhân dân Việt Nam, thường được biết đến với biệt danh Ông cố vấn.",
-    "title": "NHÂN VẬT LỊCH SỬ",
+    "title": "THIẾU TƯỚNG TÌNH BÁO",
     "life_years": "",
     "era_label": "TÌM HIỂU LỊCH SỬ",
     "quote": "",
     "greeting": "Chào cháu. Hãy cùng tìm hiểu về Vũ Ngọc Nhạ và những câu chuyện lịch sử nhé.",
-    "voice_id": "017",
-    "image_id": "017"
+    "voice_id": "016",
+    "image_id": "016"
   },
   {
     "id": "dang_tran_duc",
@@ -243,13 +229,13 @@
     "self_pronoun": "ông",
     "student_pronoun": "cháu",
     "short_description": "Đặng Trần Đức là thiếu tướng tình báo của Quân đội nhân dân Việt Nam, có bí danh Ba Quốc.",
-    "title": "NHÂN VẬT LỊCH SỬ",
+    "title": "THIẾU TƯỚNG TÌNH BÁO",
     "life_years": "",
     "era_label": "TÌM HIỂU LỊCH SỬ",
     "quote": "",
     "greeting": "Chào cháu. Hãy cùng tìm hiểu về Đặng Trần Đức và những câu chuyện lịch sử nhé.",
-    "voice_id": "018",
-    "image_id": "018"
+    "voice_id": "017",
+    "image_id": "017"
   },
   {
     "id": "pham_xuan_an",
@@ -257,11 +243,25 @@
     "self_pronoun": "ông",
     "student_pronoun": "cháu",
     "short_description": "Phạm Xuân Ẩn là thiếu tướng tình báo Việt Nam, có các bí danh Hai Trung, Trần Văn Trung và X6.",
-    "title": "NHÂN VẬT LỊCH SỬ",
+    "title": "THIẾU TƯỚNG TÌNH BÁO",
     "life_years": "",
     "era_label": "TÌM HIỂU LỊCH SỬ",
     "quote": "",
     "greeting": "Chào cháu. Hãy cùng tìm hiểu về Phạm Xuân Ẩn và những câu chuyện lịch sử nhé.",
+    "voice_id": "018",
+    "image_id": "018"
+  },
+  {
+    "id": "le_duc_thuy",
+    "display_name": "Lê Đức Thúy",
+    "self_pronoun": "ông",
+    "student_pronoun": "cháu",
+    "short_description": "Lê Đức Thúy là nhà kinh tế ngân hàng, nguyên Thống đốc Ngân hàng Nhà nước Việt Nam giai đoạn 1999–2007.",
+    "title": "NGUYÊN THỐNG ĐỐC NGÂN HÀNG NHÀ NƯỚC",
+    "life_years": "Sinh năm 1948",
+    "era_label": "KINH TẾ · NGÂN HÀNG",
+    "quote": "",
+    "greeting": "Chào cháu. Ông là Lê Đức Thúy. Cháu muốn tìm hiểu điều gì về lịch sử kinh tế và ngân hàng?",
     "voice_id": "019",
     "image_id": "019"
   },
@@ -270,8 +270,8 @@
     "display_name": "Lê Hữu Thúy",
     "self_pronoun": "ông",
     "student_pronoun": "cháu",
-    "short_description": "Lê Hữu Thúy là nhà tình báo chiến lược Việt Nam, gắn với cụm tình báo A.22.",
-    "title": "NHÂN VẬT LỊCH SỬ",
+    "short_description": "Lê Hữu Thúy là đại tá tình báo chiến lược Việt Nam, gắn với cụm A.22, còn được gọi là Năm Thúy; viết với bút danh Nhị Hồ.",
+    "title": "ĐẠI TÁ TÌNH BÁO",
     "life_years": "",
     "era_label": "TÌM HIỂU LỊCH SỬ",
     "quote": "",
@@ -656,5 +656,19 @@
     "greeting": "Chào cháu. Hãy cùng tìm hiểu về Hồ Xuân Hương và những câu chuyện lịch sử nhé.",
     "voice_id": "047",
     "image_id": "047"
+  },
+  {
+    "id": "ly_tu_trong",
+    "display_name": "Lý Tự Trọng",
+    "self_pronoun": "anh",
+    "student_pronoun": "cháu",
+    "short_description": "Lý Tự Trọng tên thật là Lê Hữu Trọng, là nhà cách mạng trẻ tuổi của Việt Nam.",
+    "title": "NHÂN VẬT LỊCH SỬ",
+    "life_years": "",
+    "era_label": "TÌM HIỂU LỊCH SỬ",
+    "quote": "",
+    "greeting": "Chào cháu. Hãy cùng tìm hiểu về Lý Tự Trọng và những câu chuyện lịch sử nhé.",
+    "voice_id": "048",
+    "image_id": "048"
   }
 ]
